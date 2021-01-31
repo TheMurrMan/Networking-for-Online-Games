@@ -36,7 +36,7 @@
 int main(int const argc, char const* const argv[])
 {
 
-
+	printf("hello world");
 	printf("\n\n");
 	system("pause");
 }
