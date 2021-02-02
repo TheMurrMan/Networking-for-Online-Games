@@ -24,7 +24,7 @@
 
 #include "gpro-net/gpro-net.h"
 
-
+#include "RakNet/MessageIdentifiers.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,8 +35,45 @@
 
 int main(int const argc, char const* const argv[])
 {
+	//code from http://www.jenkinssoftware.com/raknet/manual/tutorialsample1.html
+	RakNet::RakPeerInterface* peer = RakNet::RakPeerInterface::GetInstance();
+	bool isServer;
+	RakNet::Packet* packet;
+	RakNet::SocketDescriptor sd;
+	peer->Startup(1, &sd, 1);
+	isServer = false;
+	printf("Enter server IP or hit enter for 127.0.0.1\n");
+	printf("Starting the client.\n");
+	peer->Connect("172.16.2.57", 4024, 0, 0);
 
-	printf("hello world");
+	while (1)
+	{
+		for (packet = peer->Receive(); packet; peer->DeallocatePacket(packet), packet = peer->Receive())
+		{
+			switch (packet->data[0])
+			{
+
+			case ID_CONNECTION_REQUEST_ACCEPTED:
+				printf("Our connection request has been accepted.\n");
+				break;
+			case ID_CONNECTION_LOST:
+				if (isServer) {
+					printf("A client lost the connection.\n");
+				}
+				else {
+					printf("Connection lost.\n");
+				}
+				break;
+			default:
+				printf("Message with identifier %i has arrived.\n", packet->data[0]);
+				break;
+			}
+		}
+		//RakNet::RakPeerInterface::DestroyInstance(peer);
+
+		
+	}
+	return 0;
 	printf("\n\n");
 	system("pause");
 }
