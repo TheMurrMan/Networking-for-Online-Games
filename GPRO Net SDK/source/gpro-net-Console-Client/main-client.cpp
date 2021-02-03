@@ -23,28 +23,37 @@
 */
 
 #include "gpro-net/gpro-net.h"
-
+#include "gpro-net/Message.h"
 #include "RakNet/MessageIdentifiers.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
+#include <string>
+//tutorial 3
+#include "RakNet/BitStream.h"
+#include "RakNet/RakNetTypes.h"  // MessageID
 
 #include "RakNet/RakPeerInterface.h"
+#define SERVER_PORT 4024
+
+using namespace std;
+//tutorial 3
+enum GameMessages
+{
+	ID_GAME_MESSAGE_1 = ID_USER_PACKET_ENUM + 1
+};
 
 
 int main(int const argc, char const* const argv[])
 {
+	string username; //ask the user for this info and then send it to the server
 	//code from http://www.jenkinssoftware.com/raknet/manual/tutorialsample1.html
 	RakNet::RakPeerInterface* peer = RakNet::RakPeerInterface::GetInstance();
-	bool isServer;
 	RakNet::Packet* packet;
 	RakNet::SocketDescriptor sd;
 	peer->Startup(1, &sd, 1);
-	isServer = false;
-	printf("Enter server IP or hit enter for 127.0.0.1\n");
+
 	printf("Starting the client.\n");
-	peer->Connect("172.16.2.57", 4024, 0, 0);
+	peer->Connect("172.16.2.51", SERVER_PORT, 0, 0);
 
 	while (1)
 	{
@@ -54,15 +63,20 @@ int main(int const argc, char const* const argv[])
 			{
 
 			case ID_CONNECTION_REQUEST_ACCEPTED:
+			{
+				//tutorial 3
 				printf("Our connection request has been accepted.\n");
+
+				// Use a BitStream to write a custom user message
+				// Bitstreams are easier to use than sending casted structures, and handle endian swapping automatically
+				RakNet::BitStream bsOut;
+				bsOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_1);
+				bsOut.Write("Hello world");
+				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+			}
 				break;
 			case ID_CONNECTION_LOST:
-				if (isServer) {
-					printf("A client lost the connection.\n");
-				}
-				else {
 					printf("Connection lost.\n");
-				}
 				break;
 			default:
 				printf("Message with identifier %i has arrived.\n", packet->data[0]);
