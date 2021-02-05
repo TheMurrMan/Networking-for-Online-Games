@@ -44,7 +44,8 @@
 //tutorial 3
 enum GameMessages
 {
-	ID_GAME_MESSAGE_1 = ID_USER_PACKET_ENUM + 1
+	ID_GAME_MESSAGE_1 = ID_USER_PACKET_ENUM + 1,
+	ID_GAME_MESSAGE_2 = ID_USER_PACKET_ENUM + 2
 };
 
 int main(int const argc, char const* const argv[])
@@ -65,6 +66,9 @@ int main(int const argc, char const* const argv[])
 		{
 			switch (packet->data[0])
 			{
+
+				
+
 			case ID_REMOTE_DISCONNECTION_NOTIFICATION:
 			{
 				//need to delete client from map
@@ -80,9 +84,9 @@ int main(int const argc, char const* const argv[])
 			case ID_REMOTE_NEW_INCOMING_CONNECTION:
 			{
 				printf("Another client has connected.\n");
-				//we need to add client to map
-			}
 				
+				//we need to add client to map
+			}	
 				break;
 			case ID_NO_FREE_INCOMING_CONNECTIONS:
 				printf("The server is full.\n");
@@ -105,8 +109,15 @@ int main(int const argc, char const* const argv[])
 				RakNet::RakString rs;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+				bsIn.IgnoreBytes(sizeof(RakNet::Time));
 				bsIn.Read(rs);
 				printf("%s\n", rs.C_String());
+
+				RakNet::BitStream bsOut;
+				bsOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_2);
+				bsOut.Write("Hello world");
+				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
 			}
 			break;
 			default:
