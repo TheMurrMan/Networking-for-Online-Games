@@ -23,6 +23,7 @@
 */
 
 #include "gpro-net/gpro-net.h"
+#include "gpro-net/Message.h"
 
 #include <string>
 #include <stdio.h>
@@ -132,27 +133,18 @@ int main(int const argc, char const* const argv[])
 				for (map<RakNet::SystemAddress, string>::iterator it = usersAndIps.begin(); it != usersAndIps.end(); it++)
 				{
 					bsOut.Write(it->second.c_str());
-					bsOut.Write("\n");
-					bsOut.Write("we would put a second one here");
 				}
 				
 				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
 			}
 			case ID_GAME_MESSAGE_1:
 			{
-				//tutorial 3
-				RakNet::RakString rs;
+				//if still no worky, try without struct
+				Message rs;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
-				//bsIn.IgnoreBytes(sizeof(RakNet::Time));
-				//bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
 				bsIn.Read(rs);
-				printf("%s\n", rs.C_String()); //testing purposes for now
-
-				//RakNet::BitStream bsOut;
-				//bsOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_2);
-				//bsOut.Write("Hello world");
-				//peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
+				cout << rs.mIsPublic << rs.mRName << rs.mSName << rs.mMessage << endl;
 			}
 			break;
 			default:

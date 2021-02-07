@@ -88,16 +88,51 @@ int main(int const argc, char const* const argv[])
 				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
 
 				//request user name list
-				cout << "Do you want to the list of users? (Y/N)" << endl;
-				char answer;
-				cin >> answer;
-				if (answer == 'Y')
+				bool wantToStay = true;
+
+				while (wantToStay)
 				{
-					RakNet::BitStream bsRequestOut;
-					bsRequestOut.Write((RakNet::MessageID)ID_REQUEST_USERNAME);
-					bsRequestOut.Write("Someone requested to see the username list.");
-					peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+					cout << "1) Do you want to the list of users?" << endl
+						<< "2) Do you want to send a message?" << endl
+						<< "3) Do you want to leave?" << endl;
+					char answer;
+					cin >> answer;
+					if (answer == '1')
+					{
+						RakNet::BitStream bsRequestOut;
+						bsRequestOut.Write((RakNet::MessageID)ID_REQUEST_USERNAME);
+						bsRequestOut.Write("Someone requested to see the username list.");
+						peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+					}
+					else if (answer == '2')
+					{
+						Message message;
+						message.mSName = username;
+						char publicAns;
+						cout << "Who do you want to send it to?" << endl;
+						cin >> message.mRName;
+						cout << "is this public? (Y/N)" << endl;
+						cin >> publicAns;
+						if (publicAns == 'Y')
+						{
+							message.mIsPublic = true;
+						}
+						cout << "Enter your message:" << endl;
+						cin.ignore();
+						getline(cin, message.mMessage);
+
+						//sending message
+						RakNet::BitStream bsRequestOut;
+						bsRequestOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_1); 
+						bsRequestOut.Write(message);
+						peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+					}
+					else if (answer == '3')
+					{
+						wantToStay = false;
+					}
 				}
+
 			}
 				break;
 			case ID_CONNECTION_LOST:
@@ -118,8 +153,10 @@ int main(int const argc, char const* const argv[])
 				RakNet::RakString rs;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
-				bsIn.Read(rs);
-				printf("%s\n",rs.C_String());
+				while (bsIn.Read(rs))
+				{
+					cout << rs << endl;
+				}
 			}
 			default:
 				printf("Message with identifier %i has arrived.\n", packet->data[0]);
