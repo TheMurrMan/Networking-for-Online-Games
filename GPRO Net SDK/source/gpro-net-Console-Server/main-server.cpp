@@ -24,10 +24,11 @@
 
 #include "gpro-net/gpro-net.h"
 
-#include <string.h>
+#include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <map>
+#include <iostream>
 //tutorial 3
 #include "RakNet/BitStream.h"
 #include "RakNet/RakNetTypes.h"  // MessageID
@@ -36,7 +37,7 @@
 #include "RakNet/RakPeerInterface.h"
 
 
-
+using namespace std;
 
 #define MAX_CLIENTS 10
 #define SERVER_PORT 4024
@@ -44,8 +45,11 @@
 //tutorial 3
 enum GameMessages
 {
-	ID_GAME_MESSAGE_1 = ID_USER_PACKET_ENUM + 1,
-	ID_GAME_MESSAGE_2 = ID_USER_PACKET_ENUM + 2
+	ID_USERNAME_MESSAGE = ID_USER_PACKET_ENUM + 1,
+	ID_GAME_MESSAGE_2 = ID_USER_PACKET_ENUM + 2,
+	ID_GAME_MESSAGE_1 = ID_USER_PACKET_ENUM + 3,
+	ID_USERNAME_LIST = ID_USER_PACKET_ENUM + 4,
+	ID_REQUEST_USERNAME = ID_USER_PACKET_ENUM + 5
 };
 
 int main(int const argc, char const* const argv[])
@@ -55,6 +59,8 @@ int main(int const argc, char const* const argv[])
 	RakNet::Packet* packet;
 	RakNet::SocketDescriptor sd(SERVER_PORT, 0);
 	peer->Startup(MAX_CLIENTS, &sd, 1);
+	map<RakNet::SystemAddress,string> usersAndIps;
+
 
 	printf("Starting the server.\n");
 	// We need to let the server accept incoming connections from the clients
@@ -103,21 +109,50 @@ int main(int const argc, char const* const argv[])
 				printf("A client lost the connection.\n");
 			}
 				break;
+			case ID_USERNAME_MESSAGE:
+			{
+				RakNet::RakString rs;
+				RakNet::BitStream bsIn(packet->data, packet->length, false);
+				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+				bsIn.Read(rs);
+				usersAndIps[packet->systemAddress] = rs.C_String();
+				cout << "User with username joined:" << usersAndIps.at(packet->systemAddress) << endl;
+			}
+			break;
+			case ID_REQUEST_USERNAME:
+			{
+				RakNet::RakString rs;
+				RakNet::BitStream bsIn(packet->data, packet->length, false);
+				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+				bsIn.Read(rs);
+				printf("%s\n", rs.C_String());
+
+				RakNet::BitStream bsOut;
+				bsOut.Write((RakNet::MessageID)ID_USERNAME_LIST);
+				for (map<RakNet::SystemAddress, string>::iterator it = usersAndIps.begin(); it != usersAndIps.end(); it++)
+				{
+					bsOut.Write(it->second.c_str());
+					bsOut.Write("\n");
+					bsOut.Write("we would put a second one here");
+				}
+				
+				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
+			}
 			case ID_GAME_MESSAGE_1:
 			{
 				//tutorial 3
 				RakNet::RakString rs;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
-				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
-				bsIn.IgnoreBytes(sizeof(RakNet::Time));
+				//bsIn.IgnoreBytes(sizeof(RakNet::Time));
+				//bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
 				bsIn.Read(rs);
-				printf("%s\n", rs.C_String());
+				printf("%s\n", rs.C_String()); //testing purposes for now
 
-				RakNet::BitStream bsOut;
-				bsOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_2);
-				bsOut.Write("Hello world");
-				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
+				//RakNet::BitStream bsOut;
+				//bsOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_2);
+				//bsOut.Write("Hello world");
+				//peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
 			}
 			break;
 			default:
