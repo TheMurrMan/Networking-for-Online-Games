@@ -140,11 +140,17 @@ int main(int const argc, char const* const argv[])
 			case ID_GAME_MESSAGE_1:
 			{
 				//if still no worky, try without struct
-				Message rs;
+				RakNet::Time time;
+				string pub, message, rName, sName;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
-				bsIn.Read(rs);
-				cout << rs.mIsPublic << rs.mRName << rs.mSName << rs.mMessage << endl;
+				bsIn.Read(time);
+				cout << time << endl;
+				bsIn.Read(pub);
+				bsIn.Read(message);
+				bsIn.Read(rName);
+				bsIn.Read(sName);
+				cout << pub << message << rName << sName << "  n" << endl;
 			}
 			break;
 			default:

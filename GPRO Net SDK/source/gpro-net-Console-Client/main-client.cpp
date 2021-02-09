@@ -61,7 +61,7 @@ int main(int const argc, char const* const argv[])
 	peer->Startup(1, &sd, 1);
 
 	printf("Starting the client.\n");
-	peer->Connect("172.16.2.59", SERVER_PORT, 0, 0);
+	peer->Connect("172.16.2.63", SERVER_PORT, 0, 0);
 
 	while (1)
 	{
@@ -80,8 +80,7 @@ int main(int const argc, char const* const argv[])
 				
 				RakNet::BitStream bsOut;
 				bsOut.Write((RakNet::MessageID)ID_USERNAME_MESSAGE);
-				//bsOut.Write((RakNet::MessageID)ID_TIMESTAMP);
-				//bsOut.Write((RakNet::Time)RakNet::GetTime());
+				
 
 				//send user info
 				bsOut.Write(username.c_str());
@@ -124,7 +123,11 @@ int main(int const argc, char const* const argv[])
 						//sending message
 						RakNet::BitStream bsRequestOut;
 						bsRequestOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_1); 
-						bsRequestOut.Write(message);
+						bsRequestOut.Write((RakNet::Time)RakNet::GetTime());
+						bsRequestOut.Write(message.mIsPublic);
+						bsRequestOut.Write(message.mMessage.c_str());
+						bsRequestOut.Write(message.mRName.c_str());
+						bsRequestOut.Write(message.mSName.c_str());
 						peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
 					}
 					else if (answer == '3')
