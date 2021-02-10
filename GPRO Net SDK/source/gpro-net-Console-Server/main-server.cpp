@@ -1,4 +1,13 @@
 /*
+* Main SERVER CPP
+*
+* Ellie Perez:added to document
+* Kyle Murray:added to document
+* Main source for console SERVER application.
+*/
+
+//template of this code is from http://www.jenkinssoftware.com/raknet/manual/tutorialsample1.html
+/*
    Copyright 2021 Daniel S. Buckstein
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,11 +67,13 @@ enum GameMessages
 void SendTimeStamps(vector<int> timestamps, vector<string> messages);
 int main(int const argc, char const* const argv[])
 {
-	//code from http://www.jenkinssoftware.com/raknet/manual/tutorialsample1.html
+	//raknet set up
 	RakNet::RakPeerInterface* peer = RakNet::RakPeerInterface::GetInstance();
 	RakNet::Packet* packet;
 	RakNet::SocketDescriptor sd(SERVER_PORT, 0);
 	peer->Startup(MAX_CLIENTS, &sd, 1);
+
+	//storage containers
 	map<RakNet::SystemAddress,string> usersAndIps;
 	vector<int> listOfTimestamps;
 	vector<string> listOfMessages;
@@ -79,53 +90,59 @@ int main(int const argc, char const* const argv[])
 			{
 			case ID_REMOTE_DISCONNECTION_NOTIFICATION:
 			{
-				//need to delete client from map
+				//client went bye bye
 				printf("Another client has disconnected.\n");
 				usersAndIps.erase(packet->systemAddress);
+				break;
 			}
-			break;
+			
 			case ID_REMOTE_CONNECTION_LOST:
 			{
-				//need to delete client from map
+				//client went bye bye
 				printf("Another client has lost the connection.\n");
 				usersAndIps.erase(packet->systemAddress);
-			}
 				break;
+			}
+				
 			case ID_REMOTE_NEW_INCOMING_CONNECTION:
 			{
 				printf("Another client has connected.\n");
-				
-				//we need to add client to map
-			}	
 				break;
+			}	
+				
 			case ID_NO_FREE_INCOMING_CONNECTIONS:
 				printf("The server is full.\n");
 				break;
 			case ID_DISCONNECTION_NOTIFICATION:
 			{
-				//we need to delete client to map
+				//client went bye bye
 				printf("A client has disconnected.\n");
 				usersAndIps.erase(packet->systemAddress);
-			}
 				break;
+			}
+				
 			case ID_CONNECTION_LOST:
 			{
-				//we need to delete client to map
+				//client went bye bye
 				usersAndIps.erase(packet->systemAddress);
-			}
 				break;
+			}
+				
 			case ID_USERNAME_MESSAGE:
 			{
+				//user connected and sent us their username
 				RakNet::RakString rs;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
 				bsIn.Read(rs);
 				usersAndIps[packet->systemAddress] = rs.C_String();
 				cout << "User with username joined:" << usersAndIps.at(packet->systemAddress) << endl;
+				break;
 			}
-			break;
+			
 			case ID_REQUEST_USERNAME:
 			{
+				//user requested the list so we have to send it
 				RakNet::RakString rs;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
@@ -142,10 +159,11 @@ int main(int const argc, char const* const argv[])
 				}
 				
 				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
+				break;
 			}
 			case ID_GAME_MESSAGE_1:
 			{
-				//if still no worky, try without struct
+				//get message from the client
 				RakNet::Time time;
 				RakNet::RakString message, rName, sName;
 				bool pub;
@@ -163,15 +181,21 @@ int main(int const argc, char const* const argv[])
 				//send to correct people
 				if (pub)
 				{
+					//send to everyone
 					RakNet::BitStream bsRequestOut;
 					bsRequestOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_2);
 					bsRequestOut.Write("Sender:");
 					bsRequestOut.Write(sName);
 					bsRequestOut.Write(message);
-					peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
+					for (map<RakNet::SystemAddress, string>::iterator it = usersAndIps.begin(); it != usersAndIps.end(); it++)
+					{
+						peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, it->first, true);
+					}
+					
 				}
 				else
 				{
+					//send to only the receiver
 					map<RakNet::SystemAddress, string>::iterator it;
 					it = usersAndIps.find(rName.C_String());
 					if (it != usersAndIps.end())
@@ -184,9 +208,9 @@ int main(int const argc, char const* const argv[])
 						peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, it->first, false);
 					}
 				}
-				
+				break;
 			}
-			break;
+			
 			default:
 				printf("Message with identifier %i has arrived.\n", packet->data[0]);
 				break;
@@ -202,6 +226,7 @@ int main(int const argc, char const* const argv[])
 	system("pause");
 }
 
+//send the timestamps to a text file
 void SendTimeStamps(vector<int> timestamps, vector<string> messages)
 {
 	ofstream file;

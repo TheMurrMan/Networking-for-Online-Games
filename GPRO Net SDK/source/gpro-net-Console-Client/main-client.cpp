@@ -1,4 +1,14 @@
 /*
+* Main Client CPP
+* 
+* Ellie Perez:added to document
+* Kyle Murray:added to document
+* Main source for console client application.
+*/
+
+//template of this code is from http://www.jenkinssoftware.com/raknet/manual/tutorialsample1.html
+
+/*
    Copyright 2021 Daniel S. Buckstein
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,10 +62,11 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 
 int main(int const argc, char const* const argv[])
 {
-	string username; //ask the user for this info and then send it to the server
+	//ask the user for this info and then send it to the server
+	string username;
 	cout << "Please type in your preferred username;" << endl;
 	cin >> username;
-	//code from http://www.jenkinssoftware.com/raknet/manual/tutorialsample1.html
+	
 	RakNet::RakPeerInterface* peer = RakNet::RakPeerInterface::GetInstance();
 	RakNet::Packet* packet;
 	RakNet::SocketDescriptor sd;
@@ -73,12 +84,8 @@ int main(int const argc, char const* const argv[])
 
 			case ID_CONNECTION_REQUEST_ACCEPTED:
 			{
-				//tutorial 3
+				//from raknet website cited above
 				printf("Our connection request has been accepted.\n");
-
-				// Use a BitStream to write a custom user message
-				// Bitstreams are easier to use than sending casted structures, and handle endian swapping automatically
-				
 				RakNet::BitStream bsOut;
 				bsOut.Write((RakNet::MessageID)ID_USERNAME_MESSAGE);
 				
@@ -86,16 +93,16 @@ int main(int const argc, char const* const argv[])
 				//send user info
 				bsOut.Write(username.c_str());
 				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
-				showGui(peer, packet, username);
 				
-
-			}
 				break;
+			}
+				
 			case ID_CONNECTION_LOST:
 					printf("Connection lost.\n");
 				break;
 			case ID_USERNAME_LIST:
 			{
+				//get user name list from server
 				RakNet::RakString rs;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
@@ -103,11 +110,12 @@ int main(int const argc, char const* const argv[])
 				{
 					cout << rs << endl;
 				}
-				showGui(peer, packet, username);
+				break;
 			}
+			
 			case ID_GAME_MESSAGE_2:
 			{
-				//tutorial 3
+				//receive any messages from the server
 				RakNet::RakString rs;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
@@ -117,18 +125,20 @@ int main(int const argc, char const* const argv[])
 				cout << rs << endl;
 				bsIn.Read(rs);
 				cout << "Message: " << rs << endl;
-				showGui(peer, packet, username);
+				break;
 			}
 			default:
 			{
-				showGui(peer, packet, username);
+				
 			}
 				break;
 			}
+			showGui(peer, packet, username);
 		}
 
 		
 	}
+	//destroy instance
 	RakNet::RakPeerInterface::DestroyInstance(peer);
 	return 0;
 	printf("\n\n");
@@ -137,6 +147,7 @@ int main(int const argc, char const* const argv[])
 
 void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string username)
 {
+	//shows user the menu
 	cout << "1) Do you want to the list of users?" << endl
 		<< "2) Do you want to send a message?" << endl
 		<< "3) Do you want to wait to receive a message?" << endl;
@@ -144,6 +155,7 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 	cin >> answer;
 	if (answer == '1')
 	{
+		//tell server we want the username list
 		RakNet::BitStream bsRequestOut;
 		bsRequestOut.Write((RakNet::MessageID)ID_REQUEST_USERNAME);
 		bsRequestOut.Write("Someone requested to see the username list.");
@@ -153,7 +165,7 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 	{
 		Message message;
 		message.mSName = username;
-
+		//asking the user for the message information
 		char publicAns;
 		cout << "Who do you want to send it to?" << endl;
 		cin >> message.mRName;
@@ -167,7 +179,7 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 		cin.ignore();
 		getline(cin, message.mMessage);
 
-		//sending message
+		//sending message to server
 		RakNet::BitStream bsRequestOut;
 		bsRequestOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_1);
 		bsRequestOut.Write((RakNet::Time)RakNet::GetTime());
@@ -179,6 +191,7 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 	}
 	else if (answer == '3')
 	{
+		//tells user they will not see the menu again until they get a message
 		cout << "We will wait until you get a message." << endl;
 	}
 }
