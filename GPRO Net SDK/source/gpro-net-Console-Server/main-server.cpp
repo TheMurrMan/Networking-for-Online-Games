@@ -24,12 +24,14 @@
 
 #include "gpro-net/gpro-net.h"
 #include "gpro-net/Message.h"
-
+#include <fstream>
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <map>
 #include <iostream>
+#include <vector>
+
 //tutorial 3
 #include "RakNet/BitStream.h"
 #include "RakNet/RakNetTypes.h"  // MessageID
@@ -53,6 +55,7 @@ enum GameMessages
 	ID_REQUEST_USERNAME = ID_USER_PACKET_ENUM + 5
 };
 
+void SendTimeStamps(vector<int> timestamps);
 int main(int const argc, char const* const argv[])
 {
 	//code from http://www.jenkinssoftware.com/raknet/manual/tutorialsample1.html
@@ -61,7 +64,7 @@ int main(int const argc, char const* const argv[])
 	RakNet::SocketDescriptor sd(SERVER_PORT, 0);
 	peer->Startup(MAX_CLIENTS, &sd, 1);
 	map<RakNet::SystemAddress,string> usersAndIps;
-
+	vector<int> listOfTimestamps;
 
 	printf("Starting the server.\n");
 	// We need to let the server accept incoming connections from the clients
@@ -73,20 +76,7 @@ int main(int const argc, char const* const argv[])
 		{
 			switch (packet->data[0])
 			{
-
-				
-
-			case ID_REMOTE_DISCONNECTION_NOTIFICATION:
-			{
-				//need to delete client from map
-				printf("Another client has disconnected.\n");
-			}
-				break;
-			case ID_REMOTE_CONNECTION_LOST:
-			{
-				//need to delete client from map
-				printf("Another client has lost the connection.\n");
-			}
+			
 				break;
 			case ID_REMOTE_NEW_INCOMING_CONNECTION:
 			{
@@ -102,6 +92,7 @@ int main(int const argc, char const* const argv[])
 			{
 				//we need to delete client to map
 				printf("A client has disconnected.\n");
+				usersAndIps.erase(packet->systemAddress);
 			}
 				break;
 			case ID_CONNECTION_LOST:
@@ -141,16 +132,19 @@ int main(int const argc, char const* const argv[])
 			{
 				//if still no worky, try without struct
 				RakNet::Time time;
-				string pub, message, rName, sName;
+				RakNet::RakString message, rName, sName;
+				bool pub;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
 				bsIn.Read(time);
-				cout << time << endl;
 				bsIn.Read(pub);
 				bsIn.Read(message);
 				bsIn.Read(rName);
 				bsIn.Read(sName);
-				cout << pub << message << rName << sName << "  n" << endl;
+				listOfTimestamps.push_back((int)time);
+				cout << pub << message << rName << sName << "  \n" << endl;
+				SendTimeStamps(listOfTimestamps);
+				
 			}
 			break;
 			default:
@@ -158,11 +152,26 @@ int main(int const argc, char const* const argv[])
 				break;
 			}
 		}
-
 		
 	}
+
+	
 	RakNet::RakPeerInterface::DestroyInstance(peer);
 	return 0;
 	printf("\n\n");
 	system("pause");
+}
+
+void SendTimeStamps(vector<int> timestamps)
+{
+	ofstream file;
+	file.open("./Timestamp.txt");
+	cout << file.fail();
+	for (int i = 0; i < timestamps.size(); ++i)
+	{
+		file << timestamps[i] <<"FUCK THIS" <<endl;
+
+	}
+
+	file.close();
 }

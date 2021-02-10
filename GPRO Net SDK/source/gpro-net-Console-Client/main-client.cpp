@@ -62,7 +62,7 @@ int main(int const argc, char const* const argv[])
 	peer->Startup(1, &sd, 1);
 
 	printf("Starting the client.\n");
-	peer->Connect("172.16.2.57", SERVER_PORT, 0, 0);
+	peer->Connect("172.16.2.59", SERVER_PORT, 0, 0);
 
 	while (1)
 	{
@@ -149,6 +149,7 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 	{
 		Message message;
 		message.mSName = username;
+
 		char publicAns;
 		cout << "Who do you want to send it to?" << endl;
 		cin >> message.mRName;
