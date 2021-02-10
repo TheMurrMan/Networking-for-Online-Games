@@ -48,6 +48,7 @@ enum GameMessages
 	ID_REQUEST_USERNAME = ID_USER_PACKET_ENUM + 5
 };
 
+void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string username);
 
 int main(int const argc, char const* const argv[])
 {
@@ -61,7 +62,7 @@ int main(int const argc, char const* const argv[])
 	peer->Startup(1, &sd, 1);
 
 	printf("Starting the client.\n");
-	peer->Connect("172.16.2.63", SERVER_PORT, 0, 0);
+	peer->Connect("172.16.2.57", SERVER_PORT, 0, 0);
 
 	while (1)
 	{
@@ -85,56 +86,8 @@ int main(int const argc, char const* const argv[])
 				//send user info
 				bsOut.Write(username.c_str());
 				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
-
-				//request user name list
-				bool wantToStay = true;
-
-				while (wantToStay)
-				{
-					cout << "1) Do you want to the list of users?" << endl
-						<< "2) Do you want to send a message?" << endl
-						<< "3) Do you want to leave?" << endl;
-					char answer;
-					cin >> answer;
-					if (answer == '1')
-					{
-						RakNet::BitStream bsRequestOut;
-						bsRequestOut.Write((RakNet::MessageID)ID_REQUEST_USERNAME);
-						bsRequestOut.Write("Someone requested to see the username list.");
-						peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
-					}
-					else if (answer == '2')
-					{
-						Message message;
-						message.mSName = username;
-						char publicAns;
-						cout << "Who do you want to send it to?" << endl;
-						cin >> message.mRName;
-						cout << "is this public? (Y/N)" << endl;
-						cin >> publicAns;
-						if (publicAns == 'Y')
-						{
-							message.mIsPublic = true;
-						}
-						cout << "Enter your message:" << endl;
-						cin.ignore();
-						getline(cin, message.mMessage);
-
-						//sending message
-						RakNet::BitStream bsRequestOut;
-						bsRequestOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_1); 
-						bsRequestOut.Write((RakNet::Time)RakNet::GetTime());
-						bsRequestOut.Write(message.mIsPublic);
-						bsRequestOut.Write(message.mMessage.c_str());
-						bsRequestOut.Write(message.mRName.c_str());
-						bsRequestOut.Write(message.mSName.c_str());
-						peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
-					}
-					else if (answer == '3')
-					{
-						wantToStay = false;
-					}
-				}
+				showGui(peer, packet, username);
+				
 
 			}
 				break;
@@ -148,7 +101,7 @@ int main(int const argc, char const* const argv[])
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
 				bsIn.Read(rs);
 				printf("%s\n", rs.C_String());
-
+				showGui(peer, packet, username);
 			}
 			case ID_GAME_MESSAGE_2:
 			{
@@ -160,17 +113,67 @@ int main(int const argc, char const* const argv[])
 				{
 					cout << rs << endl;
 				}
+				showGui(peer, packet, username);
 			}
 			default:
-				printf("Message with identifier %i has arrived.\n", packet->data[0]);
+			{
+				showGui(peer, packet, username);
+			}
 				break;
 			}
 		}
-		//RakNet::RakPeerInterface::DestroyInstance(peer);
 
 		
 	}
+	RakNet::RakPeerInterface::DestroyInstance(peer);
 	return 0;
 	printf("\n\n");
 	system("pause");
+}
+
+void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string username)
+{
+	cout << "1) Do you want to the list of users?" << endl
+		<< "2) Do you want to send a message?" << endl
+		<< "3) Do you want to wait to receive a message?" << endl;
+	char answer;
+	cin >> answer;
+	if (answer == '1')
+	{
+		RakNet::BitStream bsRequestOut;
+		bsRequestOut.Write((RakNet::MessageID)ID_REQUEST_USERNAME);
+		bsRequestOut.Write("Someone requested to see the username list.");
+		peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+	}
+	else if (answer == '2')
+	{
+		Message message;
+		message.mSName = username;
+		char publicAns;
+		cout << "Who do you want to send it to?" << endl;
+		cin >> message.mRName;
+		cout << "is this public? (Y/N)" << endl;
+		cin >> publicAns;
+		if (publicAns == 'Y')
+		{
+			message.mIsPublic = true;
+		}
+		cout << "Enter your message:" << endl;
+		cin.ignore();
+		getline(cin, message.mMessage);
+
+		//sending message
+		RakNet::BitStream bsRequestOut;
+		bsRequestOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_1);
+		bsRequestOut.Write((RakNet::Time)RakNet::GetTime());
+		bsRequestOut.Write(message.mIsPublic);
+		bsRequestOut.Write(message.mMessage.c_str());
+		bsRequestOut.Write(message.mRName.c_str());
+		bsRequestOut.Write(message.mSName.c_str());
+		peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+	}
+	else if (answer == '3')
+	{
+		cout << "We will wait until you get a message." << endl;
+	}
 }
