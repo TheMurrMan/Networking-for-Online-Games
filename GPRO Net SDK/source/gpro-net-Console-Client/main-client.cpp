@@ -62,7 +62,7 @@ int main(int const argc, char const* const argv[])
 	peer->Startup(1, &sd, 1);
 
 	printf("Starting the client.\n");
-	peer->Connect("172.16.2.59", SERVER_PORT, 0, 0);
+	peer->Connect("172.16.2.57", SERVER_PORT, 0, 0);
 
 	while (1)
 	{
@@ -99,8 +99,10 @@ int main(int const argc, char const* const argv[])
 				RakNet::RakString rs;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
-				bsIn.Read(rs);
-				printf("%s\n", rs.C_String());
+				while (bsIn.Read(rs))
+				{
+					cout << rs << endl;
+				}
 				showGui(peer, packet, username);
 			}
 			case ID_GAME_MESSAGE_2:
@@ -109,10 +111,12 @@ int main(int const argc, char const* const argv[])
 				RakNet::RakString rs;
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
-				while (bsIn.Read(rs))
-				{
-					cout << rs << endl;
-				}
+				bsIn.Read(rs);
+				cout << rs;
+				bsIn.Read(rs);
+				cout << rs << endl;
+				bsIn.Read(rs);
+				cout << "Message: " << rs << endl;
 				showGui(peer, packet, username);
 			}
 			default:

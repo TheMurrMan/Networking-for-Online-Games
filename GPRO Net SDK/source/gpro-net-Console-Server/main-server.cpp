@@ -55,7 +55,7 @@ enum GameMessages
 	ID_REQUEST_USERNAME = ID_USER_PACKET_ENUM + 5
 };
 
-void SendTimeStamps(vector<int> timestamps);
+void SendTimeStamps(vector<int> timestamps, vector<string> messages);
 int main(int const argc, char const* const argv[])
 {
 	//code from http://www.jenkinssoftware.com/raknet/manual/tutorialsample1.html
@@ -65,6 +65,7 @@ int main(int const argc, char const* const argv[])
 	peer->Startup(MAX_CLIENTS, &sd, 1);
 	map<RakNet::SystemAddress,string> usersAndIps;
 	vector<int> listOfTimestamps;
+	vector<string> listOfMessages;
 
 	printf("Starting the server.\n");
 	// We need to let the server accept incoming connections from the clients
@@ -76,7 +77,19 @@ int main(int const argc, char const* const argv[])
 		{
 			switch (packet->data[0])
 			{
-			
+			case ID_REMOTE_DISCONNECTION_NOTIFICATION:
+			{
+				//need to delete client from map
+				printf("Another client has disconnected.\n");
+				usersAndIps.erase(packet->systemAddress);
+			}
+			break;
+			case ID_REMOTE_CONNECTION_LOST:
+			{
+				//need to delete client from map
+				printf("Another client has lost the connection.\n");
+				usersAndIps.erase(packet->systemAddress);
+			}
 				break;
 			case ID_REMOTE_NEW_INCOMING_CONNECTION:
 			{
@@ -98,7 +111,7 @@ int main(int const argc, char const* const argv[])
 			case ID_CONNECTION_LOST:
 			{
 				//we need to delete client to map
-				printf("A client lost the connection.\n");
+				usersAndIps.erase(packet->systemAddress);
 			}
 				break;
 			case ID_USERNAME_MESSAGE:
@@ -121,9 +134,11 @@ int main(int const argc, char const* const argv[])
 
 				RakNet::BitStream bsOut;
 				bsOut.Write((RakNet::MessageID)ID_USERNAME_LIST);
+				cout << "size: " << usersAndIps.size() <<endl;
 				for (map<RakNet::SystemAddress, string>::iterator it = usersAndIps.begin(); it != usersAndIps.end(); it++)
 				{
 					bsOut.Write(it->second.c_str());
+					cout << it->second << " : ";
 				}
 				
 				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
@@ -142,8 +157,33 @@ int main(int const argc, char const* const argv[])
 				bsIn.Read(rName);
 				bsIn.Read(sName);
 				listOfTimestamps.push_back((int)time);
+				listOfMessages.push_back(message.C_String());
 				cout << pub << message << rName << sName << "  \n" << endl;
-				SendTimeStamps(listOfTimestamps);
+
+				//send to correct people
+				if (pub)
+				{
+					RakNet::BitStream bsRequestOut;
+					bsRequestOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_2);
+					bsRequestOut.Write("Sender:");
+					bsRequestOut.Write(sName);
+					bsRequestOut.Write(message);
+					peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
+				}
+				else
+				{
+					map<RakNet::SystemAddress, string>::iterator it;
+					it = usersAndIps.find(rName.C_String());
+					if (it != usersAndIps.end())
+					{
+						RakNet::BitStream bsRequestOut;
+						bsRequestOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_2);
+						bsRequestOut.Write("Sender:");
+						bsRequestOut.Write(sName);
+						bsRequestOut.Write(message);
+						peer->Send(&bsRequestOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, it->first, false);
+					}
+				}
 				
 			}
 			break;
@@ -152,7 +192,7 @@ int main(int const argc, char const* const argv[])
 				break;
 			}
 		}
-		
+		SendTimeStamps(listOfTimestamps, listOfMessages);
 	}
 
 	
@@ -162,15 +202,13 @@ int main(int const argc, char const* const argv[])
 	system("pause");
 }
 
-void SendTimeStamps(vector<int> timestamps)
+void SendTimeStamps(vector<int> timestamps, vector<string> messages)
 {
 	ofstream file;
-	file.open("./Timestamp.txt");
-	cout << file.fail();
+	file.open("Timestamp.txt");
 	for (int i = 0; i < timestamps.size(); ++i)
 	{
-		file << timestamps[i] <<"FUCK THIS" <<endl;
-
+		file << timestamps[i] << ":" << messages[i] <<endl;
 	}
 
 	file.close();
