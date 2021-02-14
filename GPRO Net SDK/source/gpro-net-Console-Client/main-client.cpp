@@ -45,6 +45,10 @@
 #include "RakNet/RakNetTypes.h"  // MessageID
 
 #include "RakNet/RakPeerInterface.h"
+
+// Project 2 stuff
+#include "gpro-net/gpro-net-common/gpro-net-gamestate.h"
+#include "gpro-net/gpro-net-common/gpro-net-console.h"
 #define SERVER_PORT 4024
 
 using namespace std;
@@ -59,9 +63,14 @@ enum GameMessages
 };
 
 void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string username);
+void playCheckers();
+void GameLoop();
 
 int main(int const argc, char const* const argv[])
 {
+	// Show Checkers
+	playCheckers();
+
 	//ask the user for this info and then send it to the server
 	string username;
 	cout << "Please type in your preferred username;" << endl;
@@ -195,3 +204,29 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 		cout << "We will wait until you get a message." << endl;
 	}
 }
+
+// MOVE TO SERVER
+void playCheckers()
+{
+	gpro_battleship board;
+	gpro_battleship_reset(board);
+
+	cout << "------------------\n";
+	for (int i = 0; i < 10; ++i)
+	{
+		for (int  j = 0; j < 10; ++j)
+		{
+			cout << "|";
+			printf("%u", board[i][j]);
+		}
+		cout << "|";
+		cout << endl << "------------------";
+		cout << endl;
+	}
+}
+
+void GameLoop()
+{
+	
+}
+
