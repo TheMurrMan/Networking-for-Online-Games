@@ -63,14 +63,16 @@ enum GameMessages
 };
 
 void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string username);
-void playCheckers();
-void GameLoop();
+void playBattleShip();
+void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship);
+bool checkIfShipCanBePlaced(int howManyMoreTimes, gpro_battleship board, int x, int y);
+bool checkIfEndCoordValid(int x, int y, int endX, int endY, gpro_battleship board);
+void placeShip(int x, int y, int endX, int endY, gpro_battleship board, gpro_battleship_flag ship);
+void gameLoop();
 
 int main(int const argc, char const* const argv[])
 {
-	// Show Checkers
-	playCheckers();
-
+	playBattleShip();
 	//ask the user for this info and then send it to the server
 	string username;
 	cout << "Please type in your preferred username;" << endl;
@@ -206,7 +208,7 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 }
 
 // MOVE TO SERVER
-void playCheckers()
+void playBattleShip()
 {
 	gpro_battleship board;
 	gpro_battleship_reset(board);
@@ -223,10 +225,140 @@ void playCheckers()
 		cout << endl << "------------------";
 		cout << endl;
 	}
+
+	//for each type of ship, call setup
+	//this doesnt work yet
+	setUp(2, board, gpro_battleship_ship_p2); //idk if this is how we pass/change the values 
+	setUp(3, board, gpro_battleship_ship_s3);
+	setUp(3, board, gpro_battleship_ship_d3);
+	setUp(4, board, gpro_battleship_ship_b4);
+	setUp(5, board, gpro_battleship_ship_c5);
+	//game loop
 }
 
-void GameLoop()
+void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship)
 {
-	
+	//ask for start coord
+	bool notValid = true;
+	int x = 0;
+	int y = 0;
+	while (notValid)
+	{
+		cout << "Please enter the x part of the start coordiante of this ship (must be within bounds):" << endl;
+		cin >> x;
+		cout << "Please enter the y part of the start coordiante of this ship (must be within bounds):" << endl;
+		cin >> y;
+		//check valid
+		notValid = !checkIfShipCanBePlaced(lengthOfShip - 1, board, x, y);
+	}
+	//ask for end coord
+	int endX = 0;
+	int endY = 0;
+	while (notValid)
+	{
+		cout << "Please enter the x part of the end coordiante of this ship (must be within bounds):" << endl;
+		cin >> endX;
+		cout << "Please enter the y part of the end coordiante of this ship (must be within bounds):" << endl;
+		cin >> endY;
+		//check valid
+		notValid = !checkIfEndCoordValid(x, y, endX, endY, board);
+	}
+	//actually place the ship
+	placeShip(x, y, endX, endY, board, ship);
+}
+
+bool checkIfShipCanBePlaced(int howManyMoreTimes, gpro_battleship board, int x, int y)
+{
+	bool retval = false;
+	if (howManyMoreTimes > 0)
+	{
+		if (x < 10 && x >= 0 && y < 10 && y >= 0) //check if on the board
+		{
+			//check if we can actually fit the ship without overlapping
+			retval = board[x][y] && gpro_battleship_ship && checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x - 1, y);
+
+			//if we already found a valid path, we dont want to continue looking
+			if (retval)
+			{
+				retval = checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x + 1, y);
+			}
+			if (retval)
+			{
+				retval = checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x, y - 1);
+			}
+			if (retval)
+			{
+				retval = checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x, y + 1);
+			}
+
+		}
+	}
+	else
+	{
+		retval = true;
+	}
+
+	return retval;
+}
+
+bool checkIfEndCoordValid(int x, int y, int endX, int endY, gpro_battleship board)
+{
+	//check which direction we have to iterate
+	bool continueLoop = true;
+	bool retval = false;
+	if (endY == y)
+	{
+		while (continueLoop)
+		{
+			x++;
+			retval = board[x][y] && gpro_battleship_ship;
+			continueLoop = x < endX-1 && !retval; //continue while we still need to check AND while retval is valid
+		}
+	}
+	else
+	{
+		while (continueLoop)
+		{
+			y++;
+			retval = board[x][y] && gpro_battleship_ship;
+			continueLoop = y < endY - 1 && !retval; //continue while we still need to check AND while retval is valid
+		}
+	}
+	return retval;
+}
+
+void placeShip(int x, int y, int endX, int endY, gpro_battleship board, gpro_battleship_flag ship)
+{
+	bool continueLoop = true;
+	bool retval = false;
+	if (endY == y)
+	{
+		while (continueLoop)
+		{
+			board[x][y] = ship;
+			x++;
+			continueLoop = x <= endX;
+		}
+	}
+	else
+	{
+		while (continueLoop)
+		{
+			board[x][y] = ship;
+			y++;
+			continueLoop = y <= endY;
+		}
+	}
+}
+
+void gameLoop()
+{
+	//show board
+	//ask coord to hit
+		//check if valid
+		//if already chosen or not valid, ask again
+		//notify hit or miss
+		//check if sunk
+		//check if won
 }
 
