@@ -73,7 +73,7 @@ int main(int const argc, char const* const argv[])
 	peer->Startup(1, &sd, 1);
 
 	printf("Starting the client.\n");
-	peer->Connect("172.16.2.57", SERVER_PORT, 0, 0);
+	peer->Connect("172.16.2.51", SERVER_PORT, 0, 0);
 
 	while (1)
 	{
@@ -192,6 +192,6 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 	else if (answer == '3')
 	{
 		//tells user they will not see the menu again until they get a message
-		cout << "We will wait until you get a message." << endl;
+		cout << "We will wait until you get a message. :(" << endl;
 	}
 }

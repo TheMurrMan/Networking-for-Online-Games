@@ -124,6 +124,7 @@ int main(int const argc, char const* const argv[])
 			case ID_CONNECTION_LOST:
 			{
 				//client went bye bye
+				printf("A client lost connection.\n");
 				usersAndIps.erase(packet->systemAddress);
 				break;
 			}
