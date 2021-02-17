@@ -249,7 +249,7 @@ void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship)
 		cout << "Please enter the y part of the start coordiante of this ship (must be within bounds):" << endl;
 		cin >> y;
 		//check valid
-		notValid = !checkIfShipCanBePlaced(lengthOfShip - 1, board, x, y);
+		notValid = !checkIfShipCanBePlaced(lengthOfShip, board, x, y);
 	}
 	//ask for end coord
 	int endX = 0;
@@ -272,25 +272,25 @@ bool checkIfShipCanBePlaced(int howManyMoreTimes, gpro_battleship board, int x, 
 	bool retval = false;
 	if (howManyMoreTimes > 0)
 	{
+		cout << x << ", " << y << endl;
 		if (x < 10 && x >= 0 && y < 10 && y >= 0) //check if on the board
 		{
 			//check if we can actually fit the ship without overlapping
 			retval = board[x][y] && gpro_battleship_ship && checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x - 1, y);
-
+			
 			//if we already found a valid path, we dont want to continue looking
-			if (retval)
+			if (!retval)
 			{
 				retval = checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x + 1, y);
 			}
-			if (retval)
+			if (!retval)
 			{
 				retval = checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x, y - 1);
 			}
-			if (retval)
+			if (!retval)
 			{
 				retval = checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x, y + 1);
 			}
-
 		}
 	}
 	else
