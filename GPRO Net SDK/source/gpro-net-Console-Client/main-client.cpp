@@ -62,9 +62,7 @@ enum GameMessages
 	ID_REQUEST_USERNAME = ID_USER_PACKET_ENUM + 5
 };
 
-void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string username);
-void playBattleShip();
-void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship);
+void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string username);void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship);
 bool checkIfShipCanBePlaced(int howManyMoreTimes, gpro_battleship board, int x, int y);
 bool checkIfEndCoordValid(int x, int y, int endX, int endY, gpro_battleship board, int size);
 void placeShip(int x, int y, int endX, int endY, gpro_battleship board, gpro_battleship_flag ship);
@@ -75,7 +73,7 @@ bool checkCoord(int x, int y, int xMod, int yMod, gpro_battleship board, int ite
 
 int main(int const argc, char const* const argv[])
 {
-	playBattleShip();
+	gameLoop();
 	//ask the user for this info and then send it to the server
 	string username;
 	cout << "Please type in your preferred username;" << endl;
@@ -210,17 +208,6 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 	}
 }
 
-// MOVE TO SERVER
-void playBattleShip()
-{
-	gpro_battleship board1;
-	gpro_battleship_reset(board1);
-	cout << "Player1 set up!" << endl;
-	gpro_battleship board2;
-	cout << "Player2 set up!" << endl;
-	gpro_battleship_reset(board2);
-	//game loop
-}
 
 void formatBoard(gpro_battleship board)
 {
@@ -435,12 +422,52 @@ void placeShip(int x, int y, int endX, int endY, gpro_battleship board, gpro_bat
 
 void gameLoop()
 {
+	gpro_battleship board1;
+	gpro_battleship_reset(board1);
+	cout << "Player1 set up!" << endl;
+	gpro_battleship board2;
+	cout << "Player2 set up!" << endl;
+	gpro_battleship_reset(board2);
 	//show board
-	//ask coord to hit
-		//check if valid
-		//if already chosen or not valid, ask again
+	bool gameContinue = true;
+	while (gameContinue)
+	{
+		//player1
+		//ask coord to hit and check if valid
+		bool notValid = true;
+		int x, y;
+		while (notValid)
+		{
+			cout << "Player 1 choose a coord to hit (type x [enter] then y [enter])" << endl;
+			cin >> x >> y;
+			notValid = !canHit(board1, x, y);
+		}
+		notValid = true;
 		//notify hit or miss
-		//check if sunk
-		//check if won
+		if (gpro_battleship_ship && board2[x][y])
+		{
+			//NOT DONE IMPLEMENTING
+			//check if sunk
+			//check if won
+		}
+		else
+		{
+			cout << "You missed, you dumbass" << endl;
+		}
+		
+	}
+	
+}
+
+
+
+bool canHit(gpro_battleship board, int x, int y)
+{
+	bool retval = false;
+	if (x < 10 && x >= 0 && y < 10 && y >= 0) //on board
+	{
+		return gpro_battleship_open && board[x][y]; //check if open
+	}
+	return retval;
 }
 
