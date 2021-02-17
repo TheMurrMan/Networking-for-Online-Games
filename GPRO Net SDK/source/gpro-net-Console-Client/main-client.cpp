@@ -66,9 +66,12 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 void playBattleShip();
 void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship);
 bool checkIfShipCanBePlaced(int howManyMoreTimes, gpro_battleship board, int x, int y);
-bool checkIfEndCoordValid(int x, int y, int endX, int endY, gpro_battleship board);
+bool checkIfEndCoordValid(int x, int y, int endX, int endY, gpro_battleship board, int size);
 void placeShip(int x, int y, int endX, int endY, gpro_battleship board, gpro_battleship_flag ship);
 void gameLoop();
+void setUpPlayer(gpro_battleship board);
+void formatBoard(gpro_battleship board);
+bool checkCoord(int x, int y, int xMod, int yMod, gpro_battleship board, int iteration);
 
 int main(int const argc, char const* const argv[])
 {
@@ -210,13 +213,21 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 // MOVE TO SERVER
 void playBattleShip()
 {
-	gpro_battleship board;
-	gpro_battleship_reset(board);
+	gpro_battleship board1;
+	gpro_battleship_reset(board1);
+	cout << "Player1 set up!" << endl;
+	gpro_battleship board2;
+	cout << "Player2 set up!" << endl;
+	gpro_battleship_reset(board2);
+	//game loop
+}
 
+void formatBoard(gpro_battleship board)
+{
 	cout << "------------------\n";
 	for (int i = 0; i < 10; ++i)
 	{
-		for (int  j = 0; j < 10; ++j)
+		for (int j = 0; j < 10; ++j)
 		{
 			cout << "|";
 			printf("%u", board[i][j]);
@@ -225,15 +236,25 @@ void playBattleShip()
 		cout << endl << "------------------";
 		cout << endl;
 	}
+}
 
-	//for each type of ship, call setup
-	//this doesnt work yet
-	setUp(2, board, gpro_battleship_ship_p2); //idk if this is how we pass/change the values 
+void setUpPlayer(gpro_battleship board)
+{
+	cout << "Place your Destroyer (2 long)" << endl;
+	setUp(2, board, gpro_battleship_ship_p2);
+	formatBoard(board);
+	cout << "Place your Submarine (3 long)" << endl;
 	setUp(3, board, gpro_battleship_ship_s3);
+	formatBoard(board);
+	cout << "Place your Cruiser (3 long)" << endl;
 	setUp(3, board, gpro_battleship_ship_d3);
+	formatBoard(board);
+	cout << "Place your Battleship (4 long)" << endl;
 	setUp(4, board, gpro_battleship_ship_b4);
+	formatBoard(board);
+	cout << "Place your Carrier (5 long)" << endl;
 	setUp(5, board, gpro_battleship_ship_c5);
-	//game loop
+	formatBoard(board);
 }
 
 void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship)
@@ -250,7 +271,13 @@ void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship)
 		cin >> y;
 		//check valid
 		notValid = !checkIfShipCanBePlaced(lengthOfShip, board, x, y);
+		if (notValid)
+		{
+			cout << "invalid coords" << endl;
+		}
+		int x = 1;
 	}
+	notValid = true;
 	//ask for end coord
 	int endX = 0;
 	int endY = 0;
@@ -261,7 +288,11 @@ void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship)
 		cout << "Please enter the y part of the end coordiante of this ship (must be within bounds):" << endl;
 		cin >> endY;
 		//check valid
-		notValid = !checkIfEndCoordValid(x, y, endX, endY, board);
+		notValid = !checkIfEndCoordValid(x, y, endX, endY, board, lengthOfShip);
+		if (notValid)
+		{
+			cout << "invalid coords" << endl;
+		}
 	}
 	//actually place the ship
 	placeShip(x, y, endX, endY, board, ship);
@@ -270,58 +301,90 @@ void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship)
 bool checkIfShipCanBePlaced(int howManyMoreTimes, gpro_battleship board, int x, int y)
 {
 	bool retval = false;
-	if (howManyMoreTimes > 0)
+	if (x < 10 && x >= 0 && y < 10 && y >= 0) //check if actually on board
 	{
-		cout << x << ", " << y << endl;
-		if (x < 10 && x >= 0 && y < 10 && y >= 0) //check if on the board
+		if (!(board[x][y] && gpro_battleship_ship)) //check if a ship is already there
 		{
-			//check if we can actually fit the ship without overlapping
-			retval = board[x][y] && gpro_battleship_ship && checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x - 1, y);
-			
-			//if we already found a valid path, we dont want to continue looking
-			if (!retval)
+			if (checkCoord(x, y, 1, 0, board, howManyMoreTimes))
 			{
-				retval = checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x + 1, y);
+				retval = true;
 			}
-			if (!retval)
+			if (checkCoord(x, y, -1, 0, board, howManyMoreTimes))
 			{
-				retval = checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x, y - 1);
+				retval = true;
 			}
-			if (!retval)
+			if (checkCoord(x, y, 0, 1, board, howManyMoreTimes))
 			{
-				retval = checkIfShipCanBePlaced(howManyMoreTimes - 1, board, x, y + 1);
+				retval = true;
+			}
+			if (checkCoord(x, y, 0, -1, board, howManyMoreTimes))
+			{
+				retval = true;
 			}
 		}
 	}
-	else
-	{
-		retval = true;
-	}
+	return retval;
+	
+}
 
+bool checkCoord(int x, int y, int xMod, int yMod, gpro_battleship board, int iteration)
+{
+	bool retval = true;
+	for (int i = 0; i < iteration; i++)
+	{
+		x += xMod;
+		y += yMod;
+		//checks if coord on the board AND if there is already a ship there
+		if (!(x < 10 && x >= 0 && y < 10 && y >= 0 && !(board[x][y] && gpro_battleship_ship)))
+		{
+			retval = false;
+		}
+	}
 	return retval;
 }
 
-bool checkIfEndCoordValid(int x, int y, int endX, int endY, gpro_battleship board)
+bool checkIfEndCoordValid(int x, int y, int endX, int endY, gpro_battleship board, int size)
 {
 	//check which direction we have to iterate
 	bool continueLoop = true;
 	bool retval = false;
-	if (endY == y)
+	if (abs(x - endX) == size - 1 || abs(y - endY) == size - 1)
 	{
-		while (continueLoop)
+		if (endY == y)
 		{
-			x++;
-			retval = board[x][y] && gpro_battleship_ship;
-			continueLoop = x < endX-1 && !retval; //continue while we still need to check AND while retval is valid
+			while (continueLoop)
+			{
+				if (x >= endX)
+				{
+					x--;
+					retval = !(board[x][y] && gpro_battleship_ship);
+					continueLoop = x >= endX && retval; //continue while we still need to check AND while retval is valid
+				}
+				else
+				{
+					x++;
+					retval = !(board[x][y] && gpro_battleship_ship);
+					continueLoop = x <= endX && retval; //continue while we still need to check AND while retval is valid
+				}
+			}
 		}
-	}
-	else
-	{
-		while (continueLoop)
+		else
 		{
-			y++;
-			retval = board[x][y] && gpro_battleship_ship;
-			continueLoop = y < endY - 1 && !retval; //continue while we still need to check AND while retval is valid
+			while (continueLoop)
+			{
+				if (y >= endY)
+				{
+					y--;
+					retval = !(board[x][y] && gpro_battleship_ship);
+					continueLoop = y >= endY && retval; //continue while we still need to check AND while retval is valid
+				}
+				else
+				{
+					y++;
+					retval = !(board[x][y] && gpro_battleship_ship);
+					continueLoop = y <= endY && retval; //continue while we still need to check AND while retval is valid
+				}
+			}
 		}
 	}
 	return retval;
@@ -335,18 +398,37 @@ void placeShip(int x, int y, int endX, int endY, gpro_battleship board, gpro_bat
 	{
 		while (continueLoop)
 		{
-			board[x][y] = ship;
-			x++;
-			continueLoop = x <= endX;
+			if (x >= endX)
+			{
+				board[x][y] = ship;
+				x--;
+				continueLoop = x >= endX;
+			}
+			else
+			{
+				board[x][y] = ship;
+				x++;
+				continueLoop = x <= endX;
+			}
+			
 		}
 	}
 	else
 	{
 		while (continueLoop)
 		{
-			board[x][y] = ship;
-			y++;
-			continueLoop = y <= endY;
+			if (y >= endY)
+			{
+				board[x][y] = ship;
+				y--;
+				continueLoop = y >= endY;
+			}
+			else
+			{
+				board[x][y] = ship;
+				y++;
+				continueLoop = y <= endY;
+			}
 		}
 	}
 }
