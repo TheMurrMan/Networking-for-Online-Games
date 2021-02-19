@@ -70,6 +70,9 @@ void gameLoop();
 void setUpPlayer(gpro_battleship board);
 void formatBoard(gpro_battleship board);
 bool checkCoord(int x, int y, int xMod, int yMod, gpro_battleship board, int iteration);
+bool canHit(gpro_battleship board, int x, int y);
+void TestBoard1(gpro_battleship board);
+void TestBoard2(gpro_battleship board);
 
 int main(int const argc, char const* const argv[])
 {
@@ -419,55 +422,149 @@ void placeShip(int x, int y, int endX, int endY, gpro_battleship board, gpro_bat
 		}
 	}
 }
+void play(gpro_battleship attackBoard, gpro_battleship defendBoard, string playerName);
 
 void gameLoop()
 {
 	gpro_battleship board1;
 	gpro_battleship_reset(board1);
+
+	gpro_battleship board1_attack;
+	gpro_battleship_reset(board1_attack);
+	//setUpPlayer(board1);
+
+	TestBoard1(board1);
 	cout << "Player1 set up!" << endl;
+	formatBoard(board1);
+
+	//
 	gpro_battleship board2;
-	cout << "Player2 set up!" << endl;
 	gpro_battleship_reset(board2);
+
+	gpro_battleship board2_attack;
+	gpro_battleship_reset(board2_attack);
+	//setUpPlayer(board2);
+	TestBoard2(board2);
+	cout << "Player2 set up!" << endl;
+	formatBoard(board2);
+	
+
 	//show board
 	bool gameContinue = true;
 	while (gameContinue)
 	{
-		//player1
-		//ask coord to hit and check if valid
-		bool notValid = true;
-		int x, y;
-		while (notValid)
-		{
-			cout << "Player 1 choose a coord to hit (type x [enter] then y [enter])" << endl;
-			cin >> x >> y;
-			notValid = !canHit(board1, x, y);
-		}
-		notValid = true;
-		//notify hit or miss
-		if (gpro_battleship_ship && board2[x][y])
-		{
-			//NOT DONE IMPLEMENTING
-			//check if sunk
-			//check if won
-		}
-		else
-		{
-			cout << "You missed, you dumbass" << endl;
-		}
-		
+		play(board1_attack, board2, "Player1");
+		play(board2_attack, board1, "Player2");
 	}
 	
 }
 
+void play(gpro_battleship attackBoard, gpro_battleship defendBoard, string playerName)
+{
+	
+	//ask coord to hit and check if valid
+	bool notValid = true;
+	int x, y;
+	while (notValid)
+	{
+		cout << playerName <<", choose a coord to hit (type x [enter] then y [enter])" << endl;
+		cin >> x >> y;
+		notValid = !canHit(attackBoard, x, y);
+		if (notValid)
+		{
+			cout << "You've Already tapped this ass/ Coord doesn't exist\n";
+		}
+	}
 
+	notValid = true;
+	//notify hit or miss
+	if (gpro_battleship_ship && defendBoard[x][y])
+	{
+		//NOT DONE IMPLEMENTING
+		cout << "You Hit smartass\n";
+		attackBoard[x][y] = gpro_battleship_hit;
+		//check if sunk
+		//check if won
+	}
+
+	else
+	{
+		cout << "You missed, you dumbass" << endl;
+		attackBoard[x][y] = gpro_battleship_miss;
+	}
+}
 
 bool canHit(gpro_battleship board, int x, int y)
 {
 	bool retval = false;
 	if (x < 10 && x >= 0 && y < 10 && y >= 0) //on board
 	{
-		return gpro_battleship_open && board[x][y]; //check if open
+		retval = !(gpro_battleship_hit && board[x][y]) && !(gpro_battleship_miss && board[x][y]); //check if open
+		
 	}
 	return retval;
+}
+
+void TestBoard1(gpro_battleship board)
+{
+	gpro_battleship_reset(board);
+
+	// setup destroyer
+	board[0][0] = gpro_battleship_ship_p2;
+	board[0][1] = gpro_battleship_ship_p2;
+
+	// setup 
+	board[5][1] = gpro_battleship_ship_s3;
+	board[5][2] = gpro_battleship_ship_s3;
+	board[5][3] = gpro_battleship_ship_s3;
+
+	//
+	board[5][4] = gpro_battleship_ship_d3;
+	board[6][4] = gpro_battleship_ship_d3;
+	board[7][4] = gpro_battleship_ship_d3;
+
+	//
+	board[4][7] = gpro_battleship_ship_b4;
+	board[5][7] = gpro_battleship_ship_b4;
+	board[6][7] = gpro_battleship_ship_b4;
+	board[7][7] = gpro_battleship_ship_b4;
+
+	//
+	board[4][0] = gpro_battleship_ship_c5;
+	board[4][1] = gpro_battleship_ship_c5;
+	board[4][2] = gpro_battleship_ship_c5;
+	board[4][3] = gpro_battleship_ship_c5;
+	board[4][4] = gpro_battleship_ship_c5;
+
+}
+
+void TestBoard2(gpro_battleship board)
+{
+	// setup destroyer
+	board[0][8] = gpro_battleship_ship_p2;
+	board[0][9] = gpro_battleship_ship_p2;
+
+	// setup 
+	board[2][2] = gpro_battleship_ship_s3;
+	board[2][3] = gpro_battleship_ship_s3;
+	board[2][4] = gpro_battleship_ship_s3;
+
+	//
+	board[3][3] = gpro_battleship_ship_d3;
+	board[4][3] = gpro_battleship_ship_d3;
+	board[5][3]= gpro_battleship_ship_d3;
+
+	//
+	board[7][2] = gpro_battleship_ship_b4;
+	board[7][3] = gpro_battleship_ship_b4;
+	board[7][4] = gpro_battleship_ship_b4;
+	board[7][5] = gpro_battleship_ship_b4;
+
+	//
+	board[0][0] = gpro_battleship_ship_c5;
+	board[0][1] = gpro_battleship_ship_c5;
+	board[0][2] = gpro_battleship_ship_c5;
+	board[0][3] = gpro_battleship_ship_c5;
+	board[0][4] = gpro_battleship_ship_c5;
 }
 
