@@ -73,6 +73,8 @@ bool checkCoord(int x, int y, int xMod, int yMod, gpro_battleship board, int ite
 bool canHit(gpro_battleship board, int x, int y);
 void TestBoard1(gpro_battleship board);
 void TestBoard2(gpro_battleship board);
+string printType(gpro_battleship_flag type);
+bool checkIfSunk(gpro_battleship board, int x, int y);
 
 int main(int const argc, char const* const argv[])
 {
@@ -481,19 +483,114 @@ void play(gpro_battleship attackBoard, gpro_battleship defendBoard, string playe
 	if (gpro_battleship_ship && defendBoard[x][y])
 	{
 		//NOT DONE IMPLEMENTING
-		cout << "You Hit smartass\n";
+		cout << "You Hit, smartass\n";
 		attackBoard[x][y] = gpro_battleship_hit;
 		//check if sunk
-		//check if won
+		bool sunk = checkIfSunk(defendBoard, x, y);
+		defendBoard[x][y] = gpro_battleship_damage;
+		if (sunk)
+		{
+			//check if won
+		}
+		
 	}
-
 	else
 	{
 		cout << "You missed, you dumbass" << endl;
 		attackBoard[x][y] = gpro_battleship_miss;
 	}
+	formatBoard(attackBoard);
+	formatBoard(defendBoard);
 }
 
+bool checkIfSunk(gpro_battleship board, int x, int y)
+{
+	gpro_battleship_flag type;
+	int size = 0;
+	//assigning the size and ship type
+	if(board[x][y] && gpro_battleship_ship_p2)
+	{
+		type = gpro_battleship_ship_p2;
+		size = 2;
+	}
+	else if (board[x][y] && gpro_battleship_ship_s3)
+	{
+		type = gpro_battleship_ship_s3;
+		size = 3;
+	}
+	else if (board[x][y] && gpro_battleship_ship_d3)
+	{
+		type = gpro_battleship_ship_d3;
+		size = 3;
+	}
+	else if (board[x][y] && gpro_battleship_ship_b4)
+	{
+		type = gpro_battleship_ship_b4;
+		size = 4;
+	}
+	else if (board[x][y] && gpro_battleship_ship_c5)
+	{
+		type = gpro_battleship_ship_c5;
+		size = 5;
+	}
+
+	//checks if there are any connecting spaces left of the same ship
+	bool left = true;
+	bool up = true;
+	bool down = true;
+	bool right = true;
+	for (int i = 1; i < size; i++)
+	{
+		if (down && x + i < 10 && x + i >= 0)
+		{
+			down = !(board[x + i][y] && type) || (board[x+1][y] && gpro_battleship_damage); //is true when there are no ship spaces downward
+		}
+		if (up&& x - i < 10 && x - i >= 0)
+		{
+			up = !(board[x - i][y] && type) || (board[x - 1][y] && gpro_battleship_damage); //is true when there are no ship spaces to the upward
+		}
+		if (left && y - i < 10 && y - i >= 0)
+		{
+			left = !(board[x][y-i] && type) || (board[x][y - i] && gpro_battleship_damage); //is true when there are no ship spaces to the left
+		}
+		if (right && y + i < 10 && y + i >= 0)
+		{
+			right = !(board[x][y+i] && type) || (board[x][y + i] && gpro_battleship_damage); //is true when there are no ship spaces to the right
+		}
+	}
+	if (left && right && up && down)
+	{
+		cout << "You sunk my " << printType(type) << "!" << endl;
+	}
+	return left && right && up && down;
+}
+
+string printType(gpro_battleship_flag type)
+{
+	string ship;
+	switch(type)
+	{
+	case 0x08:
+		ship = "Destroyer";
+		break;
+	case 0x10:
+		ship = "Submarine";
+		break;
+	case 0x20:
+		ship = "Cruiser";
+		break;
+	case 0x40:
+		ship = "Battleship";
+		break;
+	case 0x80:
+		ship = "Carrier";
+		break;
+	default:
+		ship = "There is no ship";
+		break;
+	}
+	return ship;
+}
 bool canHit(gpro_battleship board, int x, int y)
 {
 	bool retval = false;
