@@ -20,6 +20,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\source\gpro-net-Console-Server\main-server.cpp" />
+    <ClCompile Include="..\..\..\source\gpro-net\gpro-net-common\gpro-net-console_win.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\include\gpro-net\gpro-net-common\gpro-net-console.h" />
+    <ClInclude Include="..\..\..\include\gpro-net\gpro-net-common\gpro-net-gamestate.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
