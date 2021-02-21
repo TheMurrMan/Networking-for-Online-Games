@@ -75,6 +75,8 @@ void TestBoard1(gpro_battleship board);
 void TestBoard2(gpro_battleship board);
 string printType(gpro_battleship_flag type);
 bool checkIfSunk(gpro_battleship board, int x, int y);
+bool checkIfWon(gpro_battleship board);
+bool play(gpro_battleship attackBoard, gpro_battleship defendBoard, string playerName);
 
 int main(int const argc, char const* const argv[])
 {
@@ -213,7 +215,6 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 	}
 }
 
-
 void formatBoard(gpro_battleship board)
 {
 	cout << "------------------\n";
@@ -295,7 +296,7 @@ bool checkIfShipCanBePlaced(int howManyMoreTimes, gpro_battleship board, int x, 
 	bool retval = false;
 	if (x < 10 && x >= 0 && y < 10 && y >= 0) //check if actually on board
 	{
-		if (!(board[x][y] && gpro_battleship_ship)) //check if a ship is already there
+		if (!(board[x][y] & gpro_battleship_ship)) //check if a ship is already there
 		{
 			if (checkCoord(x, y, 1, 0, board, howManyMoreTimes))
 			{
@@ -327,7 +328,7 @@ bool checkCoord(int x, int y, int xMod, int yMod, gpro_battleship board, int ite
 		x += xMod;
 		y += yMod;
 		//checks if coord on the board AND if there is already a ship there
-		if (!(x < 10 && x >= 0 && y < 10 && y >= 0 && !(board[x][y] && gpro_battleship_ship)))
+		if (!(x < 10 && x >= 0 && y < 10 && y >= 0 && !(board[x][y] & gpro_battleship_ship)))
 		{
 			retval = false;
 		}
@@ -349,13 +350,13 @@ bool checkIfEndCoordValid(int x, int y, int endX, int endY, gpro_battleship boar
 				if (x >= endX)
 				{
 					x--;
-					retval = !(board[x][y] && gpro_battleship_ship);
+					retval = !(board[x][y] & gpro_battleship_ship);
 					continueLoop = x >= endX && retval; //continue while we still need to check AND while retval is valid
 				}
 				else
 				{
 					x++;
-					retval = !(board[x][y] && gpro_battleship_ship);
+					retval = !(board[x][y] & gpro_battleship_ship);
 					continueLoop = x <= endX && retval; //continue while we still need to check AND while retval is valid
 				}
 			}
@@ -367,13 +368,13 @@ bool checkIfEndCoordValid(int x, int y, int endX, int endY, gpro_battleship boar
 				if (y >= endY)
 				{
 					y--;
-					retval = !(board[x][y] && gpro_battleship_ship);
+					retval = !(board[x][y] & gpro_battleship_ship);
 					continueLoop = y >= endY && retval; //continue while we still need to check AND while retval is valid
 				}
 				else
 				{
 					y++;
-					retval = !(board[x][y] && gpro_battleship_ship);
+					retval = !(board[x][y] & gpro_battleship_ship);
 					continueLoop = y <= endY && retval; //continue while we still need to check AND while retval is valid
 				}
 			}
@@ -424,7 +425,7 @@ void placeShip(int x, int y, int endX, int endY, gpro_battleship board, gpro_bat
 		}
 	}
 }
-void play(gpro_battleship attackBoard, gpro_battleship defendBoard, string playerName);
+
 
 void gameLoop()
 {
@@ -450,20 +451,21 @@ void gameLoop()
 	cout << "Player2 set up!" << endl;
 	formatBoard(board2);
 	
-
 	//show board
 	bool gameContinue = true;
 	while (gameContinue)
 	{
-		play(board1_attack, board2, "Player1");
-		play(board2_attack, board1, "Player2");
+		gameContinue = play(board1_attack, board2, "Player1");
+		if (gameContinue)
+		{
+			gameContinue = play(board2_attack, board1, "Player2");
+		}
 	}
-	
 }
 
-void play(gpro_battleship attackBoard, gpro_battleship defendBoard, string playerName)
+bool play(gpro_battleship attackBoard, gpro_battleship defendBoard, string playerName)
 {
-	
+	bool retVal = true;
 	//ask coord to hit and check if valid
 	bool notValid = true;
 	int x, y;
@@ -480,55 +482,76 @@ void play(gpro_battleship attackBoard, gpro_battleship defendBoard, string playe
 
 	notValid = true;
 	//notify hit or miss
-	if (gpro_battleship_ship && defendBoard[x][y])
+	if (gpro_battleship_ship & defendBoard[x][y])
 	{
 		//NOT DONE IMPLEMENTING
 		cout << "You Hit, smartass\n";
-		attackBoard[x][y] = gpro_battleship_hit;
+		attackBoard[x][y] += gpro_battleship_hit;
 		//check if sunk
 		bool sunk = checkIfSunk(defendBoard, x, y);
-		defendBoard[x][y] = gpro_battleship_damage;
+		defendBoard[x][y] += gpro_battleship_damage;
 		if (sunk)
 		{
 			//check if won
+			if (checkIfWon(defendBoard))
+			{
+				retVal = false;
+			}
 		}
-		
 	}
 	else
 	{
 		cout << "You missed, you dumbass" << endl;
-		attackBoard[x][y] = gpro_battleship_miss;
+		attackBoard[x][y] += gpro_battleship_miss;
 	}
 	formatBoard(attackBoard);
 	formatBoard(defendBoard);
+
+	return retVal;
 }
 
+bool checkIfWon(gpro_battleship board)
+{
+	bool retVal = true;
+	for (int i = 0; i < 10; ++i)
+	{
+		for (int j = 0; j < 10; ++j)
+		{
+			if (board[i][j] & gpro_battleship_ship && !(board[i][j] & gpro_battleship_damage))
+			{
+				retVal = false;
+			}
+		}
+	}
+
+	return retVal;
+}
 bool checkIfSunk(gpro_battleship board, int x, int y)
 {
 	gpro_battleship_flag type;
 	int size = 0;
 	//assigning the size and ship type
-	if(board[x][y] && gpro_battleship_ship_p2)
+	if(board[x][y] & gpro_battleship_ship_p2)
 	{
 		type = gpro_battleship_ship_p2;
 		size = 2;
 	}
-	else if (board[x][y] && gpro_battleship_ship_s3)
+	else if (board[x][y] & gpro_battleship_ship_s3)
 	{
 		type = gpro_battleship_ship_s3;
 		size = 3;
 	}
-	else if (board[x][y] && gpro_battleship_ship_d3)
+	else if (board[x][y] & gpro_battleship_ship_d3)
 	{
 		type = gpro_battleship_ship_d3;
 		size = 3;
 	}
-	else if (board[x][y] && gpro_battleship_ship_b4)
+	else if (board[x][y] & gpro_battleship_ship_b4)
 	{
 		type = gpro_battleship_ship_b4;
 		size = 4;
 	}
-	else if (board[x][y] && gpro_battleship_ship_c5)
+	else if (board[x][y] & gpro_battleship_ship_c5)
 	{
 		type = gpro_battleship_ship_c5;
 		size = 5;
@@ -543,19 +566,19 @@ bool checkIfSunk(gpro_battleship board, int x, int y)
 	{
 		if (down && x + i < 10 && x + i >= 0)
 		{
-			down = !(board[x + i][y] && type) || (board[x+1][y] && gpro_battleship_damage); //is true when there are no ship spaces downward
+			down = !(board[x + i][y] & type) || (board[x+1][y] & gpro_battleship_damage); //is true when there are no ship spaces downward
 		}
 		if (up&& x - i < 10 && x - i >= 0)
 		{
-			up = !(board[x - i][y] && type) || (board[x - 1][y] && gpro_battleship_damage); //is true when there are no ship spaces to the upward
+			up = !(board[x - i][y] & type) || (board[x - 1][y] & gpro_battleship_damage); //is true when there are no ship spaces to the upward
 		}
 		if (left && y - i < 10 && y - i >= 0)
 		{
-			left = !(board[x][y-i] && type) || (board[x][y - i] && gpro_battleship_damage); //is true when there are no ship spaces to the left
+			left = !(board[x][y-i] & type) || (board[x][y - i] & gpro_battleship_damage); //is true when there are no ship spaces to the left
 		}
 		if (right && y + i < 10 && y + i >= 0)
 		{
-			right = !(board[x][y+i] && type) || (board[x][y + i] && gpro_battleship_damage); //is true when there are no ship spaces to the right
+			right = !(board[x][y+i] & type) || (board[x][y + i] & gpro_battleship_damage); //is true when there are no ship spaces to the right
 		}
 	}
 	if (left && right && up && down)
@@ -596,7 +619,7 @@ bool canHit(gpro_battleship board, int x, int y)
 	bool retval = false;
 	if (x < 10 && x >= 0 && y < 10 && y >= 0) //on board
 	{
-		retval = !(gpro_battleship_hit && board[x][y]) && !(gpro_battleship_miss && board[x][y]); //check if open
+		retval = !(gpro_battleship_hit & board[x][y]) && !(gpro_battleship_miss & board[x][y]); //check if open
 		
 	}
 	return retval;
@@ -607,61 +630,61 @@ void TestBoard1(gpro_battleship board)
 	gpro_battleship_reset(board);
 
 	// setup destroyer
-	board[0][0] = gpro_battleship_ship_p2;
-	board[0][1] = gpro_battleship_ship_p2;
-
-	// setup 
-	board[5][1] = gpro_battleship_ship_s3;
-	board[5][2] = gpro_battleship_ship_s3;
-	board[5][3] = gpro_battleship_ship_s3;
+	board[0][0] += gpro_battleship_ship_p2;
+	board[0][1] += gpro_battleship_ship_p2;
+				
+	// setup 	
+	board[5][1] += gpro_battleship_ship_s3;
+	board[5][2] += gpro_battleship_ship_s3;
+	board[5][3] += gpro_battleship_ship_s3;
+				
+	//			
+	board[5][4] += gpro_battleship_ship_d3;
+	board[6][4] += gpro_battleship_ship_d3;
+	board[7][4] += gpro_battleship_ship_d3;
+				
+	//			
+	board[4][7] += gpro_battleship_ship_b4;
+	board[5][7] += gpro_battleship_ship_b4;
+	board[6][7] += gpro_battleship_ship_b4;
+	board[7][7] += gpro_battleship_ship_b4;
 
 	//
-	board[5][4] = gpro_battleship_ship_d3;
-	board[6][4] = gpro_battleship_ship_d3;
-	board[7][4] = gpro_battleship_ship_d3;
-
-	//
-	board[4][7] = gpro_battleship_ship_b4;
-	board[5][7] = gpro_battleship_ship_b4;
-	board[6][7] = gpro_battleship_ship_b4;
-	board[7][7] = gpro_battleship_ship_b4;
-
-	//
-	board[4][0] = gpro_battleship_ship_c5;
-	board[4][1] = gpro_battleship_ship_c5;
-	board[4][2] = gpro_battleship_ship_c5;
-	board[4][3] = gpro_battleship_ship_c5;
-	board[4][4] = gpro_battleship_ship_c5;
+	board[4][0] += gpro_battleship_ship_c5;
+	board[4][1] += gpro_battleship_ship_c5;
+	board[4][2] += gpro_battleship_ship_c5;
+	board[4][3] += gpro_battleship_ship_c5;
+	board[4][4] += gpro_battleship_ship_c5;
 
 }
 
 void TestBoard2(gpro_battleship board)
 {
 	// setup destroyer
-	board[0][8] = gpro_battleship_ship_p2;
-	board[0][9] = gpro_battleship_ship_p2;
-
-	// setup 
-	board[2][2] = gpro_battleship_ship_s3;
-	board[2][3] = gpro_battleship_ship_s3;
-	board[2][4] = gpro_battleship_ship_s3;
-
-	//
-	board[3][3] = gpro_battleship_ship_d3;
-	board[4][3] = gpro_battleship_ship_d3;
-	board[5][3]= gpro_battleship_ship_d3;
-
-	//
-	board[7][2] = gpro_battleship_ship_b4;
-	board[7][3] = gpro_battleship_ship_b4;
-	board[7][4] = gpro_battleship_ship_b4;
-	board[7][5] = gpro_battleship_ship_b4;
-
-	//
-	board[0][0] = gpro_battleship_ship_c5;
-	board[0][1] = gpro_battleship_ship_c5;
-	board[0][2] = gpro_battleship_ship_c5;
-	board[0][3] = gpro_battleship_ship_c5;
-	board[0][4] = gpro_battleship_ship_c5;
+	board[0][8] += gpro_battleship_ship_p2;
+	board[0][9] += gpro_battleship_ship_p2;
+				
+	//// setup 	
+	//board[2][2] += gpro_battleship_ship_s3;
+	//board[2][3] += gpro_battleship_ship_s3;
+	//board[2][4] += gpro_battleship_ship_s3;
+	//			
+	////			
+	//board[3][3] += gpro_battleship_ship_d3;
+	//board[4][3] += gpro_battleship_ship_d3;
+	//board[5][3]=+ gpro_battleship_ship_d3;
+	//			
+	////			
+	//board[7][2] += gpro_battleship_ship_b4;
+	//board[7][3] += gpro_battleship_ship_b4;
+	//board[7][4] += gpro_battleship_ship_b4;
+	//board[7][5] += gpro_battleship_ship_b4;
+	//			
+	////			
+	//board[0][0] += gpro_battleship_ship_c5;
+	//board[0][1] += gpro_battleship_ship_c5;
+	//board[0][2] += gpro_battleship_ship_c5;
+	//board[0][3] += gpro_battleship_ship_c5;
+	//board[0][4] += gpro_battleship_ship_c5;
 }
 
