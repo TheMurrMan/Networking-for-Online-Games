@@ -1,5 +1,10 @@
 #include "GameInstance.h"
 
+GameInstance::GameInstance()
+{
+	playerCount = 0;
+}
+
 void GameInstance::formatBoard(gpro_battleship board)
 {
 	cout << "------------------\n";

@@ -13,7 +13,8 @@ using namespace std;
 class GameInstance
 {
 public:
-	void SendTimeStamps(vector<int> timestamps, vector<string> messages);
+	int playerCount;
+	GameInstance();
 	bool checkIfShipCanBePlaced(int howManyMoreTimes, gpro_battleship board, int x, int y);
 	bool checkIfEndCoordValid(int x, int y, int endX, int endY, gpro_battleship board, int size);
 	void placeShip(int x, int y, int endX, int endY, gpro_battleship board, gpro_battleship_flag ship);

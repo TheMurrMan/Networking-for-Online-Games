@@ -175,12 +175,14 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\include\gpro-net\GameInstance.h" />
     <ClInclude Include="..\..\..\include\gpro-net\gpro-net-common\gpro-net-console.h" />
     <ClInclude Include="..\..\..\include\gpro-net\gpro-net-common\gpro-net-gamestate.h" />
     <ClInclude Include="..\..\..\include\gpro-net\gpro-net.h" />
     <ClInclude Include="..\..\..\include\gpro-net\Message.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\include\gpro-net\GameInstance.cpp" />
     <ClCompile Include="..\..\..\include\gpro-net\message.cpp" />
     <ClCompile Include="..\..\..\source\gpro-net\gpro-net-common\gpro-net-console_win.c" />
     <ClCompile Include="..\..\..\source\gpro-net\gpro-net.c" />

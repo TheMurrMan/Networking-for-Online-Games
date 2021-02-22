@@ -59,11 +59,14 @@ enum GameMessages
 	ID_GAME_MESSAGE_2 = ID_USER_PACKET_ENUM + 2,
 	ID_GAME_MESSAGE_1 = ID_USER_PACKET_ENUM + 3,
 	ID_USERNAME_LIST = ID_USER_PACKET_ENUM + 4,
-	ID_REQUEST_USERNAME = ID_USER_PACKET_ENUM + 5
+	ID_REQUEST_USERNAME = ID_USER_PACKET_ENUM + 5,
+	//battleship
+	ID_SEND_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 6,
+	ID_JOIN_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 7
 };
 
 void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string username);void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship);
-
+void chooseLobby(RakNet::RakPeerInterface* peer, RakNet::Packet* packet);
 
 int main(int const argc, char const* const argv[])
 {
@@ -79,7 +82,7 @@ int main(int const argc, char const* const argv[])
 	peer->Startup(1, &sd, 1);
 
 	printf("Starting the client.\n");
-	peer->Connect("172.16.2.57", SERVER_PORT, 0, 0);
+	peer->Connect("172.16.2.59", SERVER_PORT, 0, 0);
 
 	while (1)
 	{
@@ -98,7 +101,7 @@ int main(int const argc, char const* const argv[])
 
 				//send user info
 				bsOut.Write(username.c_str());
-				peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+				peer->Send(&bsOut, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
 				
 				break;
 			}
@@ -133,13 +136,23 @@ int main(int const argc, char const* const argv[])
 				cout << "Message: " << rs << endl;
 				break;
 			}
+			case ID_SEND_GAME_INSTANCE_LIST:
+			{
+				//reading out the lobby menu
+				RakNet::RakString rs;
+				RakNet::BitStream bsIn(packet->data, packet->length, false);
+				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+				bsIn.Read(rs);
+				cout << rs;
+				chooseLobby(peer, packet);
+				break;
+			}
 			default:
 			{
 				
 			}
 				break;
 			}
-			showGui(peer, packet, username);
 		}
 
 		
@@ -202,3 +215,12 @@ void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string user
 	}
 }
 
+void chooseLobby(RakNet::RakPeerInterface* peer, RakNet::Packet* packet)
+{
+	int lobbyNum;
+	cin >> lobbyNum;
+	RakNet::BitStream bsOut;
+	bsOut.Write((RakNet::MessageID)ID_JOIN_GAME_INSTANCE_LIST);
+	bsOut.Write(lobbyNum);
+	peer->Send(&bsOut, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
+}
