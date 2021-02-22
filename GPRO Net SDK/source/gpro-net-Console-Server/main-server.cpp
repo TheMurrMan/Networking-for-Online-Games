@@ -67,12 +67,14 @@ enum GameMessages
 	ID_REQUEST_USERNAME = ID_USER_PACKET_ENUM + 5,
 	//battleship
 	ID_SEND_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 6,
-	ID_JOIN_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 7
+	ID_JOIN_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 7,
+	ID_ASK_SHIP_SETUP = ID_USER_PACKET_ENUM + 8
 };
 
 void SendTimeStamps(vector<int> timestamps, vector<string> messages);
 void sendLobby(vector<GameInstance> games, RakNet::RakPeerInterface* peer, RakNet::Packet* packet);
 void createGames(vector<GameInstance>& games);
+void sendShipCoord(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress, int size, string ship);
 int main(int const argc, char const* const argv[])
 {
 	//game instances
@@ -235,9 +237,29 @@ int main(int const argc, char const* const argv[])
 				else
 				{
 					games[lobby].playerCount++;
-					if (games[lobby].playerCount == 2)
+					if (games[lobby].playerCount == 1)
 					{
-						//start game somehow here
+						games[lobby].player1 = usersAndIps.at(packet->systemAddress);
+					}
+					else if (games[lobby].playerCount == 2)
+					{
+						games[lobby].player2 = usersAndIps.at(packet->systemAddress);
+						//start game setup
+						//send to player two
+						sendShipCoord(peer, packet->systemAddress, 2, "Patrol Boat");
+						//send to player one
+						for (map<RakNet::SystemAddress, string>::iterator it = usersAndIps.begin(); it != usersAndIps.end(); it++)
+						{
+							if (it->second == games[lobby].player1)
+							{
+								sendShipCoord(peer, it->first, 2, "Patrol Boat");
+							}
+						}
+
+					}
+					else if (games[lobby].playerCount > 2)
+					{
+						games[lobby].spectators.push_back(usersAndIps.at(packet->systemAddress));
 					}
 				}
 				break;
@@ -296,4 +318,16 @@ void sendLobby(vector<GameInstance> games, RakNet::RakPeerInterface* peer, RakNe
 	bsOut.Write((RakNet::MessageID)ID_SEND_GAME_INSTANCE_LIST);
 	bsOut.Write(str.c_str());
 	peer->Send(&bsOut, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
+}
+
+void sendShipCoord(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress, int size, string ship)
+{
+	string str;
+	str = "Enter the both start and end coords for your " + ship + " (separate each int with an [enter])\n";
+	RakNet::BitStream bsOut;
+	bsOut.Write((RakNet::MessageID)ID_ASK_SHIP_SETUP);
+	bsOut.Write(str.c_str());
+	bsOut.Write(size); //we are sending size back and forth for server reasons
+	bsOut.Write(ship.c_str()); //we are sending size back and forth for server reasons
+	peer->Send(&bsOut, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, systemAddress, false);
 }

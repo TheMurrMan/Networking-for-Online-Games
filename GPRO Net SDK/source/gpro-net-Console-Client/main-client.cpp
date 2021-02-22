@@ -62,10 +62,12 @@ enum GameMessages
 	ID_REQUEST_USERNAME = ID_USER_PACKET_ENUM + 5,
 	//battleship
 	ID_SEND_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 6,
-	ID_JOIN_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 7
+	ID_JOIN_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 7,
+	ID_ASK_SHIP_SETUP = ID_USER_PACKET_ENUM + 8
 };
 
-void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string username);void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship);
+void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string username);
+void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship);
 void chooseLobby(RakNet::RakPeerInterface* peer, RakNet::Packet* packet);
 
 int main(int const argc, char const* const argv[])
@@ -82,7 +84,7 @@ int main(int const argc, char const* const argv[])
 	peer->Startup(1, &sd, 1);
 
 	printf("Starting the client.\n");
-	peer->Connect("172.16.2.59", SERVER_PORT, 0, 0);
+	peer->Connect("172.16.2.197", SERVER_PORT, 0, 0);
 
 	while (1)
 	{
@@ -97,17 +99,17 @@ int main(int const argc, char const* const argv[])
 				printf("Our connection request has been accepted.\n");
 				RakNet::BitStream bsOut;
 				bsOut.Write((RakNet::MessageID)ID_USERNAME_MESSAGE);
-				
+
 
 				//send user info
 				bsOut.Write(username.c_str());
 				peer->Send(&bsOut, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
-				
+
 				break;
 			}
-				
+
 			case ID_CONNECTION_LOST:
-					printf("Connection lost.\n");
+				printf("Connection lost.\n");
 				break;
 			case ID_USERNAME_LIST:
 			{
@@ -121,7 +123,7 @@ int main(int const argc, char const* const argv[])
 				}
 				break;
 			}
-			
+
 			case ID_GAME_MESSAGE_2:
 			{
 				//receive any messages from the server
@@ -147,11 +149,25 @@ int main(int const argc, char const* const argv[])
 				chooseLobby(peer, packet);
 				break;
 			}
+			case ID_ASK_SHIP_SETUP:
+			{
+				//reading in starting ship
+				RakNet::RakString rs;
+				int size = 0;
+				RakNet::RakString shipName;
+				RakNet::BitStream bsIn(packet->data, packet->length, false);
+				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+				bsIn.Read(rs);
+				cout << rs;
+				chooseLobby(peer, packet);
+				//get both coords and send packet
+				break;
+			}
 			default:
 			{
-				
-			}
+
 				break;
+			}
 			}
 		}
 

@@ -385,13 +385,13 @@ string GameInstance::printType(gpro_battleship_flag type)
 	switch (type)
 	{
 	case 0x08:
-		ship = "Destroyer";
+		ship = "Patrol Boat";
 		break;
 	case 0x10:
 		ship = "Submarine";
 		break;
 	case 0x20:
-		ship = "Cruiser";
+		ship = "Destroyer";
 		break;
 	case 0x40:
 		ship = "Battleship";
