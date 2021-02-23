@@ -7,6 +7,7 @@ GameInstance::GameInstance()
 	gpro_battleship_reset(attackBoard2);
 	gpro_battleship_reset(defendBoard1);
 	gpro_battleship_reset(defendBoard2);
+	playersThatAreDone = 0;
 }
 
 void GameInstance::formatBoard(gpro_battleship board)
@@ -37,7 +38,7 @@ bool GameInstance::setUp(int lengthOfShip, string playerName, string ship, int s
 	if (playerName == player1)
 	{
 		startGood = checkIfShipCanBePlaced(lengthOfShip, defendBoard1, sx, sy);
-		endGood = checkIfEndCoordValid(sx, sy, ex, ex, defendBoard1, lengthOfShip);
+		endGood = checkIfEndCoordValid(sx, sy, ex, ey, defendBoard1, lengthOfShip);
 		retval = startGood && endGood;
 		if (retval)
 		{

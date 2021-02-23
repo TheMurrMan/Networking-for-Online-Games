@@ -300,7 +300,11 @@ int main(int const argc, char const* const argv[])
 						}
 						else
 						{
-							//figure out how to start game....
+							games[i].playersThatAreDone++;
+							if (games[i].playersThatAreDone == 2)
+							{
+								//start game
+							}
 						}
 					}
 					else

@@ -22,6 +22,7 @@ public:
 	gpro_battleship attackBoard2;
 	gpro_battleship defendBoard1;
 	gpro_battleship defendBoard2;
+	int playersThatAreDone;
 	//functions
 	GameInstance();
 	bool setUp(int lengthOfShip, string playerName, string ship, int sx, int sy, int ex, int ey);
