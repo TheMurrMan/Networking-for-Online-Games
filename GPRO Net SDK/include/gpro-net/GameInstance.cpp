@@ -3,6 +3,10 @@
 GameInstance::GameInstance()
 {
 	playerCount = 0;
+	gpro_battleship_reset(attackBoard1);
+	gpro_battleship_reset(attackBoard2);
+	gpro_battleship_reset(defendBoard1);
+	gpro_battleship_reset(defendBoard2);
 }
 
 void GameInstance::formatBoard(gpro_battleship board)
@@ -21,64 +25,63 @@ void GameInstance::formatBoard(gpro_battleship board)
 	}
 }
 
-void GameInstance::setUpPlayer(gpro_battleship board)
+
+bool GameInstance::setUp(int lengthOfShip, string playerName, string ship, int sx, int sy, int ex, int ey)
 {
-	cout << "Place your Destroyer (2 long)" << endl;
-	setUp(2, board, gpro_battleship_ship_p2);
-	formatBoard(board);
-	cout << "Place your Submarine (3 long)" << endl;
-	setUp(3, board, gpro_battleship_ship_s3);
-	formatBoard(board);
-	cout << "Place your Cruiser (3 long)" << endl;
-	setUp(3, board, gpro_battleship_ship_d3);
-	formatBoard(board);
-	cout << "Place your Battleship (4 long)" << endl;
-	setUp(4, board, gpro_battleship_ship_b4);
-	formatBoard(board);
-	cout << "Place your Carrier (5 long)" << endl;
-	setUp(5, board, gpro_battleship_ship_c5);
-	formatBoard(board);
+	//get flag we need
+	gpro_battleship_flag flag = takeStringIntoShipType(ship);
+	bool startGood = false;
+	bool endGood = false;
+	bool retval = false;
+	//check coords if player 1
+	if (playerName == player1)
+	{
+		startGood = checkIfShipCanBePlaced(lengthOfShip, defendBoard1, sx, sy);
+		endGood = checkIfEndCoordValid(sx, sy, ex, ex, defendBoard1, lengthOfShip);
+		retval = startGood && endGood;
+		if (retval)
+		{
+			//actually place the ship
+			placeShip(sx, sy, ex, ey, defendBoard1, takeStringIntoShipType(ship));
+		}
+	}
+	//check for player 2
+	else
+	{
+		startGood = checkIfShipCanBePlaced(lengthOfShip, defendBoard2, sx, sy);
+		endGood = checkIfEndCoordValid(sx, sy, ex, ey, defendBoard2, lengthOfShip);
+		retval = startGood && endGood;
+		if (retval)
+		{
+			//actually place the ship
+			placeShip(sx, sy, ex, ey, defendBoard2, takeStringIntoShipType(ship));
+		}
+	}
+	return retval;
 }
 
-void GameInstance::setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship)
+gpro_battleship_flag GameInstance::takeStringIntoShipType(string ship)
 {
-	//ask for start coord
-	bool notValid = true;
-	int x = 0;
-	int y = 0;
-	while (notValid)
+	if (ship == "Patrol Boat")
 	{
-		cout << "Please enter the x part of the start coordiante of this ship (must be within bounds):" << endl;
-		cin >> x;
-		cout << "Please enter the y part of the start coordiante of this ship (must be within bounds):" << endl;
-		cin >> y;
-		//check valid
-		notValid = !checkIfShipCanBePlaced(lengthOfShip, board, x, y);
-		if (notValid)
-		{
-			cout << "invalid coords" << endl;
-		}
-		int x = 1;
+		return gpro_battleship_ship_p2;
 	}
-	notValid = true;
-	//ask for end coord
-	int endX = 0;
-	int endY = 0;
-	while (notValid)
+	else if (ship == "Destroyer")
 	{
-		cout << "Please enter the x part of the end coordiante of this ship (must be within bounds):" << endl;
-		cin >> endX;
-		cout << "Please enter the y part of the end coordiante of this ship (must be within bounds):" << endl;
-		cin >> endY;
-		//check valid
-		notValid = !checkIfEndCoordValid(x, y, endX, endY, board, lengthOfShip);
-		if (notValid)
-		{
-			cout << "invalid coords" << endl;
-		}
+		return gpro_battleship_ship_d3;
 	}
-	//actually place the ship
-	placeShip(x, y, endX, endY, board, ship);
+	else if (ship == "Submarine")
+	{
+		return gpro_battleship_ship_s3;
+	}
+	else if (ship == "Battleship")
+	{
+		return gpro_battleship_ship_b4;
+	}
+	else
+	{
+		return gpro_battleship_ship_c5;
+	}
 }
 
 bool GameInstance::checkIfShipCanBePlaced(int howManyMoreTimes, gpro_battleship board, int x, int y)

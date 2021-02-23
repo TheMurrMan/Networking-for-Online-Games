@@ -63,12 +63,13 @@ enum GameMessages
 	//battleship
 	ID_SEND_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 6,
 	ID_JOIN_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 7,
-	ID_ASK_SHIP_SETUP = ID_USER_PACKET_ENUM + 8
+	ID_ASK_SHIP_SETUP = ID_USER_PACKET_ENUM + 8,
+	ID_SEND_SHIP_SETUP = ID_USER_PACKET_ENUM + 9
 };
 
 void showGui(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, string username);
-void setUp(int lengthOfShip, gpro_battleship board, gpro_battleship_flag ship);
 void chooseLobby(RakNet::RakPeerInterface* peer, RakNet::Packet* packet);
+void sendShipCoord(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, int size, string name);
 
 int main(int const argc, char const* const argv[])
 {
@@ -84,7 +85,7 @@ int main(int const argc, char const* const argv[])
 	peer->Startup(1, &sd, 1);
 
 	printf("Starting the client.\n");
-	peer->Connect("172.16.2.197", SERVER_PORT, 0, 0);
+	peer->Connect("172.16.2.59", SERVER_PORT, 0, 0);
 
 	while (1)
 	{
@@ -158,9 +159,12 @@ int main(int const argc, char const* const argv[])
 				RakNet::BitStream bsIn(packet->data, packet->length, false);
 				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
 				bsIn.Read(rs);
+				bsIn.Read(size);
+				bsIn.Read(shipName);
 				cout << rs;
-				chooseLobby(peer, packet);
 				//get both coords and send packet
+				sendShipCoord(peer, packet, size, shipName.C_String());
+
 				break;
 			}
 			default:
@@ -238,5 +242,24 @@ void chooseLobby(RakNet::RakPeerInterface* peer, RakNet::Packet* packet)
 	RakNet::BitStream bsOut;
 	bsOut.Write((RakNet::MessageID)ID_JOIN_GAME_INSTANCE_LIST);
 	bsOut.Write(lobbyNum);
+	peer->Send(&bsOut, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
+}
+
+void sendShipCoord(RakNet::RakPeerInterface* peer, RakNet::Packet* packet, int size, string name)
+{
+	int sx = 0;
+	int sy = 0;
+	int ex = 0;
+	int ey = 0;
+	cin >> sx >> sy >> ex >> ey;
+
+	RakNet::BitStream bsOut;
+	bsOut.Write((RakNet::MessageID)ID_SEND_SHIP_SETUP);
+	bsOut.Write(sx);
+	bsOut.Write(sy);
+	bsOut.Write(ex);
+	bsOut.Write(ey);
+	bsOut.Write(size);
+	bsOut.Write(name.c_str());
 	peer->Send(&bsOut, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, packet->systemAddress, false);
 }

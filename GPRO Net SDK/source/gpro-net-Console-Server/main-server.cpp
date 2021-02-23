@@ -68,13 +68,17 @@ enum GameMessages
 	//battleship
 	ID_SEND_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 6,
 	ID_JOIN_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 7,
-	ID_ASK_SHIP_SETUP = ID_USER_PACKET_ENUM + 8
+	ID_ASK_SHIP_SETUP = ID_USER_PACKET_ENUM + 8,
+	ID_SEND_SHIP_SETUP = ID_USER_PACKET_ENUM + 9
 };
 
 void SendTimeStamps(vector<int> timestamps, vector<string> messages);
 void sendLobby(vector<GameInstance> games, RakNet::RakPeerInterface* peer, RakNet::Packet* packet);
 void createGames(vector<GameInstance>& games);
+int findPlayersGame(string player, vector<GameInstance> games);
 void sendShipCoord(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress, int size, string ship);
+int findNextShipSize(string current);
+string findNextShip(string current);
 int main(int const argc, char const* const argv[])
 {
 	//game instances
@@ -264,6 +268,48 @@ int main(int const argc, char const* const argv[])
 				}
 				break;
 			}
+			case ID_SEND_SHIP_SETUP:
+			{
+				//getting coords from client
+				int sx, sy, ex, ey;
+				int size;
+				RakNet::RakString name;
+				RakNet::BitStream bsIn(packet->data, packet->length, false);
+				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+				bsIn.Read(sx);
+				bsIn.Read(sy);
+				bsIn.Read(ex);
+				bsIn.Read(ey);
+				bsIn.Read(size);
+				bsIn.Read(name);
+				cout << sx << sy << ex << ey <<endl; //keeping for debugging
+
+				//processing them with correct game instance
+				int i = findPlayersGame(usersAndIps.at(packet->systemAddress), games);
+				//checking for error
+				if (i > -1)
+				{
+					if (games[i].setUp(size, usersAndIps.at(packet->systemAddress), name.C_String(), sx, sy, ex, ey))
+					{
+						//we need to send next stuff
+						string newName = findNextShip(name.C_String());
+						size = findNextShipSize(newName);
+						if (size != -1)
+						{
+							sendShipCoord(peer, packet->systemAddress, size, newName);
+						}
+						else
+						{
+							//figure out how to start game....
+						}
+					}
+					else
+					{
+						sendShipCoord(peer, packet->systemAddress, size, name.C_String());
+					}
+				}
+				break;
+			}
 			default:
 				printf("Message with identifier %i has arrived.\n", packet->data[0]);
 				break;
@@ -322,6 +368,7 @@ void sendLobby(vector<GameInstance> games, RakNet::RakPeerInterface* peer, RakNe
 
 void sendShipCoord(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress, int size, string ship)
 {
+	//we probably want to change this to also send the board....
 	string str;
 	str = "Enter the both start and end coords for your " + ship + " (separate each int with an [enter])\n";
 	RakNet::BitStream bsOut;
@@ -330,4 +377,72 @@ void sendShipCoord(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemA
 	bsOut.Write(size); //we are sending size back and forth for server reasons
 	bsOut.Write(ship.c_str()); //we are sending size back and forth for server reasons
 	peer->Send(&bsOut, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, systemAddress, false);
+}
+
+int findPlayersGame(string player, vector<GameInstance> games)
+{
+	int retval = -1;
+	for (int i = 0; i < games.size(); i++)
+	{
+		if (player == games[i].player1 || player == games[i].player2)
+		{
+			retval = i;
+		}
+	}
+	return retval;
+}
+
+string findNextShip(string current)
+{
+	string retval;
+	if (current == "Patrol Boat")
+	{
+		retval = "Destroyer";
+	}
+	else if (current == "Destroyer")
+	{
+		retval = "Submarine";
+	}
+	else if (current == "Submarine")
+	{
+		retval = "Battleship";
+	}
+	else if (current == "Battleship")
+	{
+		retval = "Carrier";
+	}
+	else
+	{
+		retval = "start game";
+	}
+	return retval;
+}
+int findNextShipSize(string current)
+{
+	int retval;
+	if (current == "Patrol Boat")
+	{
+		retval = 2;
+	}
+	else if (current == "Destroyer")
+	{
+		retval = 3;
+	}
+	else if (current == "Submarine")
+	{
+		retval = 3;
+	}
+	else if (current == "Battleship")
+	{
+		retval = 4;
+	}
+	else if (current == "Carrier")
+	{
+		retval = 5;
+	}
+	else
+	{
+		retval = -1;
+	}
+	return retval;
 }
