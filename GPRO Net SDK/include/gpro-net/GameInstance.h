@@ -26,6 +26,7 @@ public:
 	//functions
 	GameInstance();
 	bool setUp(int lengthOfShip, string playerName, string ship, int sx, int sy, int ex, int ey);
+	bool canHit(gpro_battleship board, int x, int y);
 
 private:
 	//currently using

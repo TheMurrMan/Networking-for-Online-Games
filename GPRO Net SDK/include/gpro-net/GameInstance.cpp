@@ -18,14 +18,14 @@ void GameInstance::formatBoard(gpro_battleship board)
 		for (int j = 0; j < 10; ++j)
 		{
 			cout << "|";
-			printf("%u", board[i][j]);
+			char s[20];
+			sprintf(s, "%u", board[i][j]);
 		}
 		cout << "|";
 		cout << endl << "------------------";
 		cout << endl;
 	}
 }
-
 
 bool GameInstance::setUp(int lengthOfShip, string playerName, string ship, int sx, int sy, int ex, int ey)
 {

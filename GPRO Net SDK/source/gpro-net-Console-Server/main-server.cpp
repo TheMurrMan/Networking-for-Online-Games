@@ -69,7 +69,12 @@ enum GameMessages
 	ID_SEND_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 6,
 	ID_JOIN_GAME_INSTANCE_LIST = ID_USER_PACKET_ENUM + 7,
 	ID_ASK_SHIP_SETUP = ID_USER_PACKET_ENUM + 8,
-	ID_SEND_SHIP_SETUP = ID_USER_PACKET_ENUM + 9
+	ID_SEND_SHIP_SETUP = ID_USER_PACKET_ENUM + 9,
+	ID_ASK_PLAYER_HIT_COORD = ID_USER_PACKET_ENUM + 10,
+	ID_SEND_HIT_MESSAGE = ID_USER_PACKET_ENUM + 11,
+	ID_SEND_MISS_MESSAGE = ID_USER_PACKET_ENUM + 12,
+	ID_SEND_SANK_MESSAGE = ID_USER_PACKET_ENUM + 13,
+	ID_SEND_WON_MESSAGE = ID_USER_PACKET_ENUM + 14,
 };
 
 void SendTimeStamps(vector<int> timestamps, vector<string> messages);
@@ -79,6 +84,12 @@ int findPlayersGame(string player, vector<GameInstance> games);
 void sendShipCoord(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress, int size, string ship);
 int findNextShipSize(string current);
 string findNextShip(string current);
+void askPlayerCoord(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress);
+void sendMissMessage(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress);
+void sendHitMessage(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress);
+void sendSankMessage(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress, string ship);
+void sendWonMessage(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress, string player);
+string showBoard(gpro_battleship& board);
 int main(int const argc, char const* const argv[])
 {
 	//game instances
@@ -256,6 +267,7 @@ int main(int const argc, char const* const argv[])
 						{
 							if (it->second == games[lobby].player1)
 							{
+								games[lobby].attackBoard1;
 								sendShipCoord(peer, it->first, 2, "Patrol Boat");
 							}
 						}
@@ -298,12 +310,35 @@ int main(int const argc, char const* const argv[])
 						{
 							sendShipCoord(peer, packet->systemAddress, size, newName);
 						}
+
 						else
 						{
 							games[i].playersThatAreDone++;
 							if (games[i].playersThatAreDone == 2)
 							{
 								//start game
+								for (map<RakNet::SystemAddress, string>::iterator it = usersAndIps.begin(); it != usersAndIps.end(); it++)
+								{
+									if (it->second == games[i].player1)
+									{
+										askPlayerCoord(peer, it->first);
+										
+										// Check if coords are valid
+										// if valid send hit message to both players
+											// check if sank
+											// if sank send sank message to both players
+												// check if won
+												// if won send won message to both players
+													// restart game instance, show players lobby
+												// if not won
+													// change players
+													// ask player 2 for hit coords
+											
+										// else send miss message to both players
+										// change players
+										// ask player 2 for hit coords
+									}
+								}
 							}
 						}
 					}
@@ -322,7 +357,6 @@ int main(int const argc, char const* const argv[])
 		SendTimeStamps(listOfTimestamps, listOfMessages);
 	}
 
-	
 	RakNet::RakPeerInterface::DestroyInstance(peer);
 	return 0;
 	printf("\n\n");
@@ -421,6 +455,7 @@ string findNextShip(string current)
 	}
 	return retval;
 }
+
 int findNextShipSize(string current)
 {
 	int retval;
@@ -449,4 +484,77 @@ int findNextShipSize(string current)
 		retval = -1;
 	}
 	return retval;
+}
+
+void askPlayerCoord(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress)
+{
+	string str;
+	str = "Enter the coord you want to hit\n";
+	RakNet::BitStream bsOut;
+	bsOut.Write((RakNet::MessageID)ID_ASK_PLAYER_HIT_COORD);
+	bsOut.Write(str.c_str());
+	peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, systemAddress, false);
+}
+
+void sendHitMessage(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress)
+{
+	string str;
+	str = "You hit\n";
+	RakNet::BitStream bsOut;
+	bsOut.Write((RakNet::MessageID)ID_SEND_HIT_MESSAGE);
+	bsOut.Write(str.c_str());
+	peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, systemAddress, false);
+}
+
+void sendMissMessage(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress)
+{
+	string str;
+	str = "You missed\n";
+	RakNet::BitStream bsOut;
+	bsOut.Write((RakNet::MessageID)ID_SEND_MISS_MESSAGE);
+	bsOut.Write(str.c_str());
+	peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, systemAddress, false);
+}
+
+void sendSankMessage(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress, string ship)
+{
+	string str;
+	str = "Sank " + ship;
+	RakNet::BitStream bsOut;
+	bsOut.Write((RakNet::MessageID)ID_SEND_SANK_MESSAGE);
+	bsOut.Write(str.c_str());
+	bsOut.Write(ship.c_str());
+	peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, systemAddress, false);
+}
+
+void sendWonMessage(RakNet::RakPeerInterface* peer, RakNet::SystemAddress systemAddress, string player)
+{
+	string str;
+	str = player +" Won\n";
+	RakNet::BitStream bsOut;
+	bsOut.Write((RakNet::MessageID)ID_SEND_WON_MESSAGE);
+	bsOut.Write(str.c_str());
+	bsOut.Write(player.c_str());
+	peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 1, systemAddress, false);
+}
+
+string showBoard(gpro_battleship& board)
+{
+	string retVal;
+	
+	retVal =  "------------------\n";
+	for (int i = 0; i < 10; ++i)
+	{
+		for (int j = 0; j < 10; ++j)
+		{
+			retVal += "|";
+
+			char s[20];
+			retVal += sprintf(s,"%u", board[i][j]);
+		}
+		retVal += "|\n";
+		retVal += "------------------\n";
+	}
+
+	return retVal;
 }
