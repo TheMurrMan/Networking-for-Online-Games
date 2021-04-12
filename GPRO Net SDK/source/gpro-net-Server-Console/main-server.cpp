@@ -18,17 +18,22 @@
 	GPRO Net SDK: Networking framework.
 	By Daniel S. Buckstein
 
-	gpro-net.h
-	Main include for framework.
+	main-server.cpp
+	Main source for console server application.
 */
 
-#ifndef _GPRO_NET_H_
-#define _GPRO_NET_H_
+#include "gpro-net/gpro-net-server/gpro-net-RakNet-Server.hpp"
 
 
-#include "gpro-net/gpro-net-util/gpro-net-lib.h"
-#include "gpro-net/gpro-net-util/gpro-net-console.h"
-#include "gpro-net/gpro-net-util/gpro-net-gamestate.h"
+int main(int const argc, char const* const argv[])
+{
+	gproNet::cRakNetServer server;
 
+	while (1)
+	{
+		server.MessageLoop();
+	}
 
-#endif	// !_GPRO_NET_H_
+	printf("\n\n");
+	system("pause");
+}

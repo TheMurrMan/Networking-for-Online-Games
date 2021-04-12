@@ -1,3 +1,0 @@
-#include "Message.h"
-
-//we thought we would need a class....

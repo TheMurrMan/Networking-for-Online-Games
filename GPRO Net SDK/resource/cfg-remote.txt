@@ -1,4 +1,4 @@
-172.16.2.57:4024
+localhost
 
 # Remote Debugging Configuration
 # Provided by Daniel S. Buckstein

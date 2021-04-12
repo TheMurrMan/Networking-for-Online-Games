@@ -18,17 +18,28 @@
 	GPRO Net SDK: Networking framework.
 	By Daniel S. Buckstein
 
-	gpro-net.h
-	Main include for framework.
+	main-client-win.c/.cpp
+	Main source for client windowed.
 */
 
-#ifndef _GPRO_NET_H_
-#define _GPRO_NET_H_
+#if (defined _WINDOWS || defined _WIN32)
 
 
-#include "gpro-net/gpro-net-util/gpro-net-lib.h"
-#include "gpro-net/gpro-net-util/gpro-net-console.h"
-#include "gpro-net/gpro-net-util/gpro-net-gamestate.h"
+#include <Windows.h>
 
 
-#endif	// !_GPRO_NET_H_
+//-----------------------------------------------------------------------------
+// windowed entry point
+
+int APIENTRY wWinMain(
+	_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPWSTR lpCmdLine,
+	_In_ int nShowCmd
+)
+{
+
+}
+
+
+#endif	// (defined _WINDOWS || defined _WIN32)
