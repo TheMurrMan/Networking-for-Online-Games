@@ -87,4 +87,91 @@ namespace gproNet
 		}
 		return false;
 	}
+
+	/*
+struct sSpatialPose
+{
+	float scale[3];     // non-uniform scale 4bytes
+	float rotate[3];    // orientation as Euler angles 4bytes
+	float translate[3]; // translation 4bytes
+
+	// read from stream
+	RakNet::BitStream& Read(RakNet::BitStream& bitstream)
+	{
+		scale = DecompressScale(scale[]);
+		rotate = DecompressRotation(rotate[]);
+		translate = DecompressTranslation(translate[]);
+
+		bitstream.Read(scale[0]);
+		bitstream.Read(scale[1]);
+		bitstream.Read(scale[2]);
+		bitstream.Read(rotate[0]);
+		bitstream.Read(rotate[1]);
+		bitstream.Read(rotate[2]);
+		bitstream.Read(translate[0]);
+		bitstream.Read(translate[1]);
+		bitstream.Read(translate[2]);
+		return bitstream;
+	}
+
+	// write to stream
+	RakNet::BitStream& Write(RakNet::BitStream& bitstream) const
+	{
+		scale = CompressScale(scale[]);
+		rotate = CompressRotation(rotate[]);
+		translate = CompressTranslation(translate[]);
+
+		bitstream.Write(scale[0]);
+		bitstream.Write(scale[1]);
+		bitstream.Write(scale[2]);
+		bitstream.Write(rotate[0]);
+		bitstream.Write(rotate[1]);
+		bitstream.Write(rotate[2]);
+		bitstream.Write(translate[0]);
+		bitstream.Write(translate[1]);
+		bitstream.Write(translate[2]);
+		return bitstream;
+	}
+
+	// Compression functions
+	float[] CompressScale(float[] _scale)
+	{
+		// Each float is 4bytes, 4 * 3 = 12 
+		// Compress 12 bytes down to 4 bytes (32 bits) 
+		// Alot 10 bits of 32 to each float
+	}
+
+	float[] CompressRotation(float[] _rotate)
+	{
+		// Each float is 4bytes, 4 * 3 = 12
+		// Compress 12 bytes down to 4 bytes (32 bits)
+		// Alot 10 bits of 32 to each float
+	}
+
+	float[] CompressTranslation(float[] _translate)
+	{
+		// Each float is 4bytes, 4 * 3 = 12 
+		// Compress 12 bytes down to 4 bytes (32 bits) 
+		// Alot 10 bits of 32 to each float
+	}
+
+	// Decompression functions
+	float[] DecompressScale(float[] _scale)
+	{
+		// Extract the float from the alotted space
+	}
+
+	float[] DecompressRotation(float[] _rotate)
+	{
+		// Extract the float from the alotted space
+	}
+
+	float[] DecompressTranslation(float[] _translate)
+	{
+		// Extract the float from the alotted space
+	}
+};
+
+*/
+
 }
